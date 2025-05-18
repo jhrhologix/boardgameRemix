@@ -3,6 +3,7 @@ import SortOptions from "./sort-options"
 import { getUserVotes, getFavoriteStatus } from "@/lib/actions"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import Link from "next/link"
 
 export default async function FeaturedRemixes() {
   // This would normally come from your database
@@ -19,13 +20,18 @@ export default async function FeaturedRemixes() {
       games: [
         {
           name: "Chess",
+          id: "chess",
+          bggUrl: "https://boardgamegeek.com/boardgame/171/chess",
           image: "/placeholder.svg"
         },
         {
           name: "Jenga",
+          id: "jenga",
+          bggUrl: "https://boardgamegeek.com/boardgame/2452/jenga",
           image: "/placeholder.svg"
         }
-      ]
+      ],
+      hashtags: ["strategy", "dexterity", "abstract", "puzzle", "2player"]
     },
     {
       id: "2",
@@ -38,13 +44,18 @@ export default async function FeaturedRemixes() {
       games: [
         {
           name: "Monopoly",
+          id: "monopoly",
+          bggUrl: "https://boardgamegeek.com/boardgame/1406/monopoly",
           image: "/placeholder.svg"
         },
         {
           name: "Uno",
+          id: "uno",
+          bggUrl: "https://boardgamegeek.com/boardgame/2223/uno",
           image: "/placeholder.svg"
         }
-      ]
+      ],
+      hashtags: ["family", "card", "quick", "economic", "party"]
     },
     {
       id: "3",
@@ -58,13 +69,18 @@ export default async function FeaturedRemixes() {
       games: [
         {
           name: "Risk",
+          id: "risk",
+          bggUrl: "https://boardgamegeek.com/boardgame/181/risk",
           image: "/placeholder.svg"
         },
         {
           name: "Poker",
+          id: "poker",
+          bggUrl: "https://boardgamegeek.com/boardgame/1115/poker",
           image: "/placeholder.svg"
         }
-      ]
+      ],
+      hashtags: ["strategy", "card", "bluffing", "war", "area control"]
     },
     {
       id: "4",
@@ -77,13 +93,18 @@ export default async function FeaturedRemixes() {
       games: [
         {
           name: "Scrabble",
+          id: "scrabble",
+          bggUrl: "https://boardgamegeek.com/boardgame/320/scrabble",
           image: "/placeholder.svg"
         },
         {
           name: "Catan",
+          id: "catan",
+          bggUrl: "https://boardgamegeek.com/boardgame/13/catan",
           image: "/placeholder.svg"
         }
-      ]
+      ],
+      hashtags: ["word", "resource", "strategy", "tile", "competitive"]
     },
   ]
 
@@ -128,6 +149,28 @@ export default async function FeaturedRemixes() {
             isAuthenticated={isAuthenticated}
           />
         ))}
+      </div>
+      <div className="flex justify-end mt-8">
+        <Link 
+          href="/browse?sort=popular" 
+          className="inline-flex items-center gap-2 text-[#004E89] hover:text-[#FF6B35] font-semibold transition-colors"
+        >
+          View More Popular Remixes
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </Link>
       </div>
     </section>
   )

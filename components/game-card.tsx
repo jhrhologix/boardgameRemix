@@ -36,12 +36,6 @@ export default function GameCard({
   isAuthenticated = false,
   hashtags = [],
 }: GameCardProps) {
-  const difficultyColor = {
-    Easy: "bg-green-500",
-    Medium: "bg-yellow-500",
-    Hard: "bg-red-500",
-  }[difficulty]
-
   // Filter out any invalid games
   const validGames = games.filter(game => game && game.name);
 
@@ -57,9 +51,6 @@ export default function GameCard({
           isClickable={true}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
-        <div className={`absolute top-2 right-2 ${difficultyColor} text-white text-xs px-2 py-1 rounded-full`}>
-          {difficulty}
-        </div>
         <div className="absolute top-2 left-2 flex items-center gap-1">
           <VoteButtons
             remixId={id}

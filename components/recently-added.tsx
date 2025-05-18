@@ -2,20 +2,92 @@ import GameCard from "./game-card"
 import { getUserVotes, getFavoriteStatus } from "@/lib/actions"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/database.types"
+import Link from "next/link"
+
+interface Game {
+  name: string
+  id: string
+  bggUrl: string
+  image: string
+}
+
+interface Remix {
+  id: string
+  title: string
+  description: string
+  difficulty: "Easy" | "Medium" | "Hard"
+  upvotes: number
+  downvotes: number
+  games: Game[]
+  tags: string[]
+  hashtags: string[]
+}
 
 export default async function RecentlyAdded() {
   const supabase = await createClient()
   
   let isAuthenticated = false
+  let recentRemixes: Remix[] = []
+
   try {
+    // Get authentication status
     const { data: { session } } = await supabase.auth.getSession()
     isAuthenticated = !!session
+
+    // Fetch the 4 most recent remixes with their related games and hashtags
+    const { data: remixes, error } = await supabase
+      .from('remixes')
+      .select(`
+        *,
+        bgg_games (
+          game (
+            name,
+            bgg_id,
+            bgg_url,
+            image_url
+          )
+        ),
+        hashtags (
+          hashtag (
+            name
+          )
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(4)
+
+    if (error) throw error
+
+    recentRemixes = remixes.map(remix => ({
+      id: remix.id,
+      title: remix.title,
+      description: remix.description,
+      difficulty: remix.difficulty as "Easy" | "Medium" | "Hard",
+      upvotes: remix.upvotes || 0,
+      downvotes: remix.downvotes || 0,
+      games: remix.bgg_games
+        .filter((g: any) => g && g.game)
+        .map((g: any) => ({
+          name: g.game.name,
+          id: g.game.bgg_id,
+          bggUrl: g.game.bgg_url,
+          image: g.game.image_url || "/placeholder.svg"
+        })),
+      tags: remix.bgg_games
+        .filter((g: any) => g && g.game)
+        .map((g: any) => g.game.name),
+      hashtags: remix.hashtags
+        .filter((h: any) => h && h.hashtag)
+        .map((h: any) => h.hashtag.name)
+    }))
   } catch (error) {
-    console.error("Error checking authentication:", error)
+    console.error("Error fetching recent remixes:", error)
+    recentRemixes = []
   }
 
   // Get user votes and favorite status
-  const remixIds: string[] = [] // Your remix IDs logic here
+  const remixIds = recentRemixes.map(remix => remix.id)
   const [userVotes, favoriteStatus] = await Promise.all([
     getUserVotes(remixIds),
     getFavoriteStatus(remixIds)
@@ -30,16 +102,43 @@ export default async function RecentlyAdded() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* recentGames.map((game) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {recentRemixes.map((remix) => (
           <GameCard
-            key={game.id}
-            {...game}
-            userVote={userVotes?.[game.id]}
-            isFavorited={favoriteStatus?.[game.id]}
+            key={remix.id}
+            {...remix}
+            userVote={userVotes?.[remix.id]}
+            isFavorited={favoriteStatus?.[remix.id]}
             isAuthenticated={isAuthenticated}
           />
-        )) */}
+        ))}
+        {recentRemixes.length === 0 && (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">No remixes have been added yet.</p>
+          </div>
+        )}
+      </div>
+      <div className="flex justify-end mt-8">
+        <Link 
+          href="/browse?sort=newest" 
+          className="inline-flex items-center gap-2 text-[#004E89] hover:text-[#FF6B35] font-semibold transition-colors"
+        >
+          View More Recent Remixes
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </Link>
       </div>
     </section>
   )

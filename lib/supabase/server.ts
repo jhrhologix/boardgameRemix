@@ -12,8 +12,9 @@ async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        async get(name: string) {
           try {
+            const cookieStore = await cookies()
             const cookie = cookieStore.get(name)
             return cookie?.value ?? ''
           } catch (error) {
@@ -22,8 +23,8 @@ async function createClient() {
           }
         },
         async set(name: string, value: string, options: CookieOptions = {}) {
-          'use server'
           try {
+            const cookieStore = await cookies()
             cookieStore.set(name, value, {
               ...options,
               secure: process.env.NODE_ENV === 'production',
@@ -33,8 +34,8 @@ async function createClient() {
           }
         },
         async remove(name: string) {
-          'use server'
           try {
+            const cookieStore = await cookies()
             cookieStore.delete(name)
           } catch (error) {
             console.error('Error removing cookie:', error)

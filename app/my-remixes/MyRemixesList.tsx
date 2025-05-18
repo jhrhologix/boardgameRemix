@@ -100,7 +100,7 @@ export default function MyRemixesList({ remixes }: Props) {
                   .map(g => ({
                     name: g.game?.name || 'Unknown Game'
                   }))} 
-                difficulty={remix.difficulty}
+                difficulty={remix.difficulty.charAt(0).toUpperCase() + remix.difficulty.slice(1) as 'Easy' | 'Medium' | 'Hard'}
                 tags={remix.hashtags
                   .filter(tag => tag && tag.hashtag)
                   .map(tag => tag.hashtag.name)}

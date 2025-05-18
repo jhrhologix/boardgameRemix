@@ -227,6 +227,32 @@ export default function RemixCompositeImage({
           ctx.fillText(displayText.toUpperCase(), x + cellWidth/2, y + cellHeight/2)
         })
 
+        // Draw difficulty tag if provided
+        if (difficulty) {
+          const tagWidth = width * 0.2
+          const tagHeight = height * 0.1
+          const tagX = width - tagWidth - 10
+          const tagY = 10
+          
+          // Draw difficulty tag background
+          ctx.fillStyle = getDifficultyColor(difficulty)
+          ctx.beginPath()
+          ctx.roundRect(tagX, tagY, tagWidth, tagHeight, tagHeight / 2)
+          ctx.fill()
+
+          // Add white border
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+          ctx.lineWidth = 2
+          ctx.stroke()
+
+          // Draw difficulty text
+          ctx.fillStyle = 'white'
+          ctx.font = `bold ${tagHeight * 0.6}px Arial`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(difficulty, tagX + tagWidth/2, tagY + tagHeight/2)
+        }
+
         // Add unique game type symbols
         const uniqueSymbols = new Set<string>()
         tags.forEach(tag => {
@@ -262,32 +288,6 @@ export default function RemixCompositeImage({
           ctx.textBaseline = 'middle'
           ctx.fillText(symbol, x + symbolSize/2, y + symbolSize/2)
         })
-
-        // Add difficulty indicator if provided
-        if (difficulty) {
-          const indicatorSize = Math.min(width, height) * 0.12
-          const padding = indicatorSize * 0.2
-          
-          // Draw black circle background
-          ctx.beginPath()
-          ctx.arc(width - padding - indicatorSize/2, padding + indicatorSize/2, indicatorSize/2, 0, Math.PI * 2)
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
-          ctx.fill()
-
-          // Draw colored circle
-          ctx.beginPath()
-          ctx.arc(width - padding - indicatorSize/2, padding + indicatorSize/2, indicatorSize/2 - 2, 0, Math.PI * 2)
-          ctx.fillStyle = getDifficultyColor(difficulty)
-          ctx.fill()
-
-          // Add difficulty text
-          ctx.fillStyle = 'white'
-          ctx.font = `bold ${indicatorSize * 0.5}px Arial`
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          const difficultyText = difficulty[0].toUpperCase()
-          ctx.fillText(difficultyText, width - padding - indicatorSize/2, padding + indicatorSize/2)
-        }
 
       } catch (error) {
         console.error('Error drawing tiles:', error)
