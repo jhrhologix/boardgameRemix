@@ -26,7 +26,7 @@ export default function GameCard({
   id,
   title,
   description,
-  games,
+  games = [],
   tags,
   difficulty,
   upvotes = 0,
@@ -42,11 +42,19 @@ export default function GameCard({
     Hard: "bg-red-500",
   }[difficulty]
 
+  // Filter out any invalid games
+  const validGames = games.filter(game => game && game.name);
+
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg h-full flex flex-col">
       <div className="relative h-48 overflow-hidden">
         <RemixCompositeImage
-          games={games}
+          games={validGames.map(game => ({
+            name: game.name
+          }))}
+          difficulty={difficulty}
+          tags={hashtags}
+          isClickable={true}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
         <div className={`absolute top-2 right-2 ${difficultyColor} text-white text-xs px-2 py-1 rounded-full`}>
@@ -71,23 +79,18 @@ export default function GameCard({
         </h3>
         <FavoriteButton remixId={id} isFavorited={isFavorited} isAuthenticated={isAuthenticated} />
       </CardHeader>
-      <CardContent className="pb-2 flex-grow">
-        <p className="text-gray-700 mb-4">{description}</p>
-        <div className="flex flex-wrap gap-2 mb-2">
+      <CardContent className="flex-grow">
+        <p className="text-gray-600 mb-4 line-clamp-2">{description}</p>
+        <div className="flex flex-wrap gap-2">
           {tags.map((tag, index) => (
-            <Link href={`/browse?game=${encodeURIComponent(tag)}`} key={index}>
-              <Badge className="bg-[#FFBC42] hover:bg-[#e5a93b] text-[#2A2B2A] cursor-pointer">{tag}</Badge>
-            </Link>
+            <Badge key={index} variant="secondary">
+              {tag}
+            </Badge>
           ))}
         </div>
-
-        {/* Display hashtags */}
-        <HashtagDisplay hashtags={hashtags} className="mt-2" />
       </CardContent>
-      <CardFooter className="pt-2">
-        <Link href={`/remixes/${id}`} className="text-[#FF6B35] font-medium hover:underline w-full text-left">
-          View Remix →
-        </Link>
+      <CardFooter>
+        <HashtagDisplay hashtags={hashtags} />
       </CardFooter>
     </Card>
   )

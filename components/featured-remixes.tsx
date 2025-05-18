@@ -12,42 +12,78 @@ export default async function FeaturedRemixes() {
       title: "Tactical Tower: Chess + Jenga",
       description:
         "A strategic game where each Jenga piece represents a chess piece. Remove pieces strategically without compromising your position.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
       tags: ["Chess", "Jenga"],
       difficulty: "Medium" as const,
       upvotes: 124,
       downvotes: 12,
+      games: [
+        {
+          name: "Chess",
+          image: "/placeholder.svg"
+        },
+        {
+          name: "Jenga",
+          image: "/placeholder.svg"
+        }
+      ]
     },
     {
       id: "2",
       title: "Monopoly Mayhem: Monopoly + Uno",
       description: "Use Uno cards to determine movement and property actions in this fast-paced Monopoly variant.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
       tags: ["Monopoly", "Uno"],
       difficulty: "Easy" as const,
       upvotes: 87,
       downvotes: 5,
+      games: [
+        {
+          name: "Monopoly",
+          image: "/placeholder.svg"
+        },
+        {
+          name: "Uno",
+          image: "/placeholder.svg"
+        }
+      ]
     },
     {
       id: "3",
       title: "Risk & Reward: Risk + Poker",
       description:
         "Combine territory control with poker hands to determine battle outcomes in this game of chance and strategy.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
       tags: ["Risk", "Playing Cards"],
       difficulty: "Hard" as const,
       upvotes: 56,
       downvotes: 23,
+      games: [
+        {
+          name: "Risk",
+          image: "/placeholder.svg"
+        },
+        {
+          name: "Poker",
+          image: "/placeholder.svg"
+        }
+      ]
     },
     {
       id: "4",
       title: "Scrabble Quest: Scrabble + Catan",
       description: "Build words to collect resources and expand your vocabulary empire across the board.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
       tags: ["Scrabble", "Catan"],
       difficulty: "Medium" as const,
       upvotes: 142,
       downvotes: 18,
+      games: [
+        {
+          name: "Scrabble",
+          image: "/placeholder.svg"
+        },
+        {
+          name: "Catan",
+          image: "/placeholder.svg"
+        }
+      ]
     },
   ]
 

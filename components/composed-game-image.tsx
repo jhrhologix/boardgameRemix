@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import placeholderImage from '@/public/placeholder.svg'
 
 interface ComposedGameImageProps {
   games: Array<{
@@ -17,7 +16,7 @@ export default function ComposedGameImage({ games, className = "" }: ComposedGam
     return (
       <div className={`relative h-48 w-full overflow-hidden ${className}`}>
         <Image
-          src={placeholderImage}
+          src="/placeholder.svg"
           alt="No image available"
           fill
           className="object-contain"
@@ -32,7 +31,7 @@ export default function ComposedGameImage({ games, className = "" }: ComposedGam
       {gamesWithImages.length === 1 ? (
         // Single game - show full image
         <Image
-          src={gamesWithImages[0].image_url || placeholderImage}
+          src={gamesWithImages[0].image_url || "/placeholder.svg"}
           alt={gamesWithImages[0].name}
           fill
           className="object-contain"
@@ -48,7 +47,7 @@ export default function ComposedGameImage({ games, className = "" }: ComposedGam
           {gamesWithImages.slice(0, 4).map((game, index) => (
             <div key={index} className="relative overflow-hidden border border-gray-100">
               <Image
-                src={game.image_url || placeholderImage}
+                src={game.image_url || "/placeholder.svg"}
                 alt={game.name}
                 fill
                 className="object-contain p-2"
