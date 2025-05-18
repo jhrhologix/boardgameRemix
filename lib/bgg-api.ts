@@ -1,4 +1,7 @@
 // BoardGameGeek API client
+import type { DOMParser as XMLDOMParser } from '@xmldom/xmldom'
+
+export type GameType = 'strategy' | 'luck' | 'skill' | 'combat' | 'social' | 'time' | 'coop'
 
 export interface BGGGame {
   id: string
@@ -11,47 +14,100 @@ export interface BGGGame {
   maxPlayers?: number
   playingTime?: number
   bggUrl: string
+  types?: GameType[]
 }
 
-// Search for games on BoardGameGeek
+// Helper function to determine game types based on BGG categories and mechanics
+function determineGameTypes(categories: string[], mechanics: string[]): GameType[] {
+  const types = new Set<GameType>()
+
+  // Strategy games
+  if (
+    categories.some(c => 
+      ['Strategy Games', 'Abstract Strategy', 'Economic'].includes(c)
+    ) ||
+    mechanics.some(m => 
+      ['Worker Placement', 'Area Control', 'Deck Building'].includes(m)
+    )
+  ) {
+    types.add('strategy')
+  }
+
+  // Cooperative games
+  if (
+    categories.some(c => 
+      ['Cooperative Game', 'Solo / Solitaire Game'].includes(c)
+    ) ||
+    mechanics.some(m => 
+      ['Cooperative Game', 'Team-Based Game'].includes(m)
+    )
+  ) {
+    types.add('coop')
+  }
+
+  // Luck-based games
+  if (
+    mechanics.some(m => 
+      ['Dice Rolling', 'Push Your Luck', 'Random Draw'].includes(m)
+    )
+  ) {
+    types.add('luck')
+  }
+
+  // Skill-based games
+  if (
+    mechanics.some(m => 
+      ['Dexterity', 'Pattern Recognition', 'Memory'].includes(m)
+    )
+  ) {
+    types.add('skill')
+  }
+
+  // Combat games
+  if (
+    categories.some(c => 
+      ['Wargames', 'Fighting', 'Miniatures'].includes(c)
+    ) ||
+    mechanics.some(m => 
+      ['Take That', 'Combat', 'Area Control'].includes(m)
+    )
+  ) {
+    types.add('combat')
+  }
+
+  // Social games
+  if (
+    categories.some(c => 
+      ['Party Game', 'Deduction', 'Negotiation'].includes(c)
+    ) ||
+    mechanics.some(m => 
+      ['Trading', 'Social Deduction', 'Voting'].includes(m)
+    )
+  ) {
+    types.add('social')
+  }
+
+  // Time-pressure games
+  if (
+    mechanics.some(m => 
+      ['Real-Time', 'Speed', 'Time Track'].includes(m)
+    )
+  ) {
+    types.add('time')
+  }
+
+  return Array.from(types)
+}
+
+// Search for games on BoardGameGeek (client-side version)
 export async function searchBGGGames(query: string): Promise<BGGGame[]> {
   try {
-    // BGG XML API2 search endpoint
-    const response = await fetch(
-      `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`,
-    )
-
+    const response = await fetch(`/api/bgg/search?q=${encodeURIComponent(query)}`)
     if (!response.ok) {
-      throw new Error(`BGG API error: ${response.status}`)
+      throw new Error(`Search failed: ${response.statusText}`)
     }
-
-    const text = await response.text()
-    const parser = new DOMParser()
-    const xmlDoc = parser.parseFromString(text, "text/xml")
-
-    const items = xmlDoc.getElementsByTagName("item")
-    const results: BGGGame[] = []
-
-    for (let i = 0; i < items.length && i < 10; i++) {
-      const item = items[i]
-      const id = item.getAttribute("id") || ""
-      const nameNode = item.getElementsByTagName("name")[0]
-      const yearNode = item.getElementsByTagName("yearpublished")[0]
-
-      if (nameNode) {
-        const name = nameNode.getAttribute("value") || ""
-        const yearPublished = yearNode?.getAttribute("value") || ""
-
-        results.push({
-          id,
-          name,
-          yearPublished,
-          bggUrl: `https://boardgamegeek.com/boardgame/${id}`,
-        })
-      }
-    }
-
-    return results
+    const data = await response.json()
+    return data.results || []
   } catch (error) {
     console.error("Error searching BGG:", error)
     return []
@@ -61,48 +117,57 @@ export async function searchBGGGames(query: string): Promise<BGGGame[]> {
 // Get detailed game info from BoardGameGeek
 export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null> {
   try {
-    // BGG XML API2 thing endpoint
-    const response = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${gameId}&stats=1`)
+    const response = await fetch(
+      `https://boardgamegeek.com/xmlapi2/thing?id=${gameId}&stats=1`,
+      {
+        headers: {
+          'Accept': 'application/xml',
+          'User-Agent': 'BoardGameRemix/1.0'
+        }
+      }
+    )
 
     if (!response.ok) {
-      throw new Error(`BGG API error: ${response.status}`)
+      throw new Error(`Failed to get game details: ${response.statusText}`)
     }
 
     const text = await response.text()
+    const { DOMParser } = await import('@xmldom/xmldom')
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(text, "text/xml")
 
-    const items = xmlDoc.getElementsByTagName("item")
-    if (items.length === 0) return null
+    const item = xmlDoc.getElementsByTagName("item")[0]
+    if (!item) return null
 
-    const item = items[0]
-    const id = item.getAttribute("id") || ""
-    const nameNodes = item.getElementsByTagName("name")
-    let name = ""
-
-    // Find primary name
-    for (let i = 0; i < nameNodes.length; i++) {
-      const nameNode = nameNodes[i]
-      if (nameNode.getAttribute("type") === "primary") {
-        name = nameNode.getAttribute("value") || ""
-        break
-      }
-    }
-
-    if (!name && nameNodes.length > 0) {
-      name = nameNodes[0].getAttribute("value") || ""
-    }
-
-    const yearPublished = item.getElementsByTagName("yearpublished")[0]?.getAttribute("value") || ""
+    const name = item.getElementsByTagName("name")[0]?.getAttribute("value") || ""
+    const yearPublished = item.getElementsByTagName("yearpublished")[0]?.getAttribute("value")
     const image = item.getElementsByTagName("image")[0]?.textContent || ""
     const thumbnail = item.getElementsByTagName("thumbnail")[0]?.textContent || ""
     const description = item.getElementsByTagName("description")[0]?.textContent || ""
-    const minPlayers = Number.parseInt(item.getElementsByTagName("minplayers")[0]?.getAttribute("value") || "0")
-    const maxPlayers = Number.parseInt(item.getElementsByTagName("maxplayers")[0]?.getAttribute("value") || "0")
-    const playingTime = Number.parseInt(item.getElementsByTagName("playingtime")[0]?.getAttribute("value") || "0")
+    const minPlayers = parseInt(item.getElementsByTagName("minplayers")[0]?.getAttribute("value") || "0")
+    const maxPlayers = parseInt(item.getElementsByTagName("maxplayers")[0]?.getAttribute("value") || "0")
+    const playingTime = parseInt(item.getElementsByTagName("playingtime")[0]?.getAttribute("value") || "0")
+
+    // Get categories and mechanics
+    const links = item.getElementsByTagName("link")
+    const categories: string[] = []
+    const mechanics: string[] = []
+
+    for (let i = 0; i < links.length; i++) {
+      const link = links[i]
+      const type = link.getAttribute("type")
+      const value = link.getAttribute("value")
+      if (value) {
+        if (type === "boardgamecategory") categories.push(value)
+        if (type === "boardgamemechanic") mechanics.push(value)
+      }
+    }
+
+    // Determine game types
+    const types = determineGameTypes(categories, mechanics)
 
     return {
-      id,
+      id: gameId,
       name,
       yearPublished,
       image,
@@ -111,7 +176,8 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
       minPlayers,
       maxPlayers,
       playingTime,
-      bggUrl: `https://boardgamegeek.com/boardgame/${id}`,
+      bggUrl: `https://boardgamegeek.com/boardgame/${gameId}`,
+      types
     }
   } catch (error) {
     console.error("Error getting BGG game details:", error)
@@ -122,32 +188,76 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
 // Server-side version of the search function
 export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
   try {
-    // Use node-fetch or native fetch in Node.js environment
+    console.log('Searching BGG for:', query)
     const response = await fetch(
       `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`,
+      {
+        headers: {
+          'Accept': 'application/xml',
+          'User-Agent': 'BoardGameRemix/1.0',
+          'Origin': 'https://boardgamegeek.com',
+          'Referer': 'https://boardgamegeek.com/'
+        },
+        next: {
+          revalidate: 3600 // Cache for 1 hour
+        }
+      }
     )
 
     if (!response.ok) {
+      console.error(`BGG API error: ${response.status} - ${response.statusText}`)
+      console.error('Response headers:', Object.fromEntries(response.headers.entries()))
       throw new Error(`BGG API error: ${response.status}`)
     }
 
     const text = await response.text()
+    console.log('BGG API response:', text.substring(0, 200))
 
-    // Use a server-side XML parser
-    const { DOMParser } = await import("xmldom")
+    if (!text || text.trim() === '') {
+      console.error('Empty response from BGG API')
+      throw new Error('Empty response from BGG API')
+    }
+
+    const { DOMParser } = await import('@xmldom/xmldom')
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(text, "text/xml")
 
+    const errors = xmlDoc.getElementsByTagName("parsererror")
+    if (errors.length > 0) {
+      console.error('XML parsing error:', errors[0].textContent)
+      throw new Error('Failed to parse BGG API response')
+    }
+
     const items = xmlDoc.getElementsByTagName("item")
+    console.log(`Found ${items.length} items in BGG response`)
+    
+    if (items.length === 0) {
+      console.log('No items found in BGG response. Raw response:', text)
+    }
+
     const results: BGGGame[] = []
 
     for (let i = 0; i < items.length && i < 10; i++) {
-      const item = items[i]
-      const id = item.getAttribute("id") || ""
-      const nameNodes = item.getElementsByTagName("name")
+      try {
+        const item = items[i]
+        const id = item.getAttribute("id")
+        if (!id) {
+          console.warn('Item missing ID, skipping:', item)
+          continue
+        }
 
-      if (nameNodes.length > 0) {
-        const name = nameNodes[0].getAttribute("value") || ""
+        const nameNodes = item.getElementsByTagName("name")
+        if (nameNodes.length === 0) {
+          console.warn('Item missing name, skipping:', id)
+          continue
+        }
+
+        const name = nameNodes[0].getAttribute("value")
+        if (!name) {
+          console.warn('Name node missing value attribute:', id)
+          continue
+        }
+
         const yearNodes = item.getElementsByTagName("yearpublished")
         const yearPublished = yearNodes.length > 0 ? yearNodes[0].getAttribute("value") || "" : ""
 
@@ -157,12 +267,15 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
           yearPublished,
           bggUrl: `https://boardgamegeek.com/boardgame/${id}`,
         })
+      } catch (itemError) {
+        console.error('Error processing item:', itemError)
       }
     }
 
+    console.log('Processed BGG results:', results)
     return results
   } catch (error) {
     console.error("Error searching BGG:", error)
-    return []
+    throw error
   }
 }

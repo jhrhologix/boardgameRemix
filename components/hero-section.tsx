@@ -1,8 +1,16 @@
+"use client"
+
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import TipJar from "./tip-jar"
+import { useRouter } from "next/navigation"
 
 export default function HeroSection() {
+  const router = useRouter()
+
+  const handleBrowseClick = () => {
+    router.push('/browse')
+  }
+
   return (
     <section className="relative bg-[#004E89] text-white py-16 md:py-24">
       {/* Background image with overlay */}
@@ -15,14 +23,11 @@ export default function HeroSection() {
         }}
       >
         {/* Dark overlay to ensure text readability */}
-        <div className="absolute inset-0 bg-black opacity-50"></div>
+        <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="flex justify-center mb-4">
-            <TipJar />
-          </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-shadow-lg">
             Give Your Board Games a Second Life
           </h1>
@@ -37,13 +42,20 @@ export default function HeroSection() {
                 placeholder="Enter games you own (e.g., Chess, Monopoly, Jenga)"
                 className="flex-grow px-4 py-3 text-[#2A2B2A] focus:outline-none"
               />
-              <button className="bg-[#FF6B35] p-3 text-white">
-                <Search size={24} />
-              </button>
+              <Button 
+                variant="default"
+                className="m-0 rounded-none"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
             </div>
           </div>
 
-          <Button className="bg-[#FF6B35] hover:bg-[#e55a2a] text-white px-8 py-6 text-lg rounded-lg shadow-lg transition-all">
+          <Button 
+            variant="default"
+            className="px-8 py-6 text-lg shadow-lg transition-all"
+            onClick={handleBrowseClick}
+          >
             Browse All Remixes
           </Button>
         </div>

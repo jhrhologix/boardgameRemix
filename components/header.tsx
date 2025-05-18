@@ -6,10 +6,8 @@ import { cookies } from "next/headers"
 import TipJar from "./tip-jar"
 
 export default async function Header() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-
-  // Get session safely
+  const supabase = await createClient()
+  
   let session = null
   try {
     const { data } = await supabase.auth.getSession()
@@ -22,11 +20,7 @@ export default async function Header() {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-[#004E89]">Remix Games</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="flex items-center space-x-6">
             <Link href="/browse" className="text-gray-700 hover:text-[#FF6B35]">
               Browse Remixes
             </Link>
@@ -41,7 +35,6 @@ export default async function Header() {
                 My Favorites
               </Link>
             )}
-            <TipJar />
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -51,16 +44,11 @@ export default async function Header() {
             {session ? (
               <UserMenu user={session.user} />
             ) : (
-              <div className="flex items-center space-x-2">
-                <Link href="/auth/login">
-                  <Button variant="outline" className="hidden sm:inline-flex">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button className="bg-[#FF6B35] hover:bg-[#e55a2a]">Sign up</Button>
-                </Link>
-              </div>
+              <Link href="/auth">
+                <Button variant="outline" className="hidden sm:inline-flex">
+                  Log in
+                </Button>
+              </Link>
             )}
           </div>
         </div>

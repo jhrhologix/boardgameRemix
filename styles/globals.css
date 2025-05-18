@@ -92,3 +92,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Override dropdown menu styles */
+.dropdown-menu-content {
+  @apply bg-white !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}

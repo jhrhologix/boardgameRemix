@@ -115,71 +115,58 @@ export async function toggleFavorite(formData: FormData) {
   }
 }
 
-// Other functions remain the same
 export async function getFavoriteStatus(remixIds: string[]) {
-  try {
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+  if (!remixIds.length) return {}
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+  const supabase = await createClient()
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
       return {}
     }
 
     const { data } = await supabase
-      .from("favorites")
-      .select("remix_id")
-      .eq("user_id", session.user.id)
-      .in("remix_id", remixIds)
+      .from('favorites')
+      .select('remix_id')
+      .eq('user_id', session.user.id)
+      .in('remix_id', remixIds)
 
-    const favoriteStatus: Record<string, boolean> = {}
-
-    if (data) {
-      data.forEach((favorite) => {
-        favoriteStatus[favorite.remix_id] = true
-      })
-    }
-
-    return favoriteStatus
+    return data?.reduce((acc, fav) => ({
+      ...acc,
+      [fav.remix_id]: true,
+    }), {}) || {}
   } catch (error) {
-    console.error("Error getting favorite status:", error)
+    console.error('Error getting favorite status:', error)
     return {}
   }
 }
 
 export async function getUserVotes(remixIds: string[]) {
-  try {
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+  if (!remixIds.length) return {}
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+  const supabase = await createClient()
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
       return {}
     }
 
     const { data } = await supabase
-      .from("votes")
-      .select("remix_id, vote_type")
-      .eq("user_id", session.user.id)
-      .in("remix_id", remixIds)
+      .from('user_votes')
+      .select('remix_id, vote_type')
+      .eq('user_id', session.user.id)
+      .in('remix_id', remixIds)
 
-    const userVotes: Record<string, string> = {}
-
-    if (data) {
-      data.forEach((vote) => {
-        userVotes[vote.remix_id] = vote.vote_type
-      })
-    }
-
-    return userVotes
+    return data?.reduce((acc, vote) => ({
+      ...acc,
+      [vote.remix_id]: vote.vote_type,
+    }), {}) || {}
   } catch (error) {
-    console.error("Error getting user votes:", error)
+    console.error('Error getting user votes:', error)
     return {}
   }
 }

@@ -11,10 +11,19 @@ import { ExternalLink, Hash } from "lucide-react"
 import Link from "next/link"
 import AmazonAffiliateLink from "@/components/amazon-affiliate-link"
 import TipJar from "@/components/tip-jar"
+import { Suspense } from 'react'
 
 // Generate some static params to ensure the page exists during build time
 export function generateStaticParams() {
   return [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }]
+}
+
+interface UserVotes {
+  [key: string]: 'upvote' | 'downvote' | null
+}
+
+interface FavoriteStatus {
+  [key: string]: boolean
 }
 
 export default async function RemixDetailPage({
@@ -24,179 +33,69 @@ export default async function RemixDetailPage({
 }) {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
-
-  // Check if user is authenticated
   let isAuthenticated = false
-  let session = null
+  let remix = null
+  let userVotes: UserVotes | null = null
+  let favoriteStatus: FavoriteStatus | null = null
+  const remixId = params.id // Store params.id in a variable
+
+  // Check authentication
   try {
-    const { data } = await supabase.auth.getSession()
-    session = data.session
+    const { data: { session } } = await supabase.auth.getSession()
     isAuthenticated = !!session
   } catch (error) {
     console.error("Error checking authentication:", error)
   }
 
-  // Try to get remix details
-  let remix = null
-  let error = null
-
+  // Fetch remix data
   try {
-    const response = await supabase
-      .from("remixes")
+    const { data, error } = await supabase
+      .from('remixes')
       .select(`
         *,
-        user:user_id (email, id),
-        bgg_games (*)
+        creator:creator_id (email),
+        games:remix_games (
+          game:bgg_game_id (
+            bgg_id,
+            name,
+            image_url,
+            bgg_url,
+            amazon_url
+          )
+        ),
+        hashtags:remix_hashtags (
+          hashtag:hashtag_id (name)
+        ),
+        keywords:remix_keywords (
+          keyword:keyword_id (name)
+        )
       `)
-      .eq("id", params.id)
+      .eq('id', remixId)
       .single()
 
-    remix = response.data
-    error = response.error
-  } catch (e) {
-    console.error("Error fetching remix:", e)
-    error = e
-  }
-
-  // If no data in database, use mock data for demo purposes
-  if (!remix || error) {
-    // For demo purposes, return mock data for specific IDs
-    if (["1", "2", "3", "4", "5", "6", "7", "8", "9"].includes(params.id)) {
-      const mockRemixes = {
-        "1": {
-          id: "1",
-          title: "Tactical Tower: Chess + Jenga",
-          description:
-            "A strategic game where each Jenga piece represents a chess piece. Remove pieces strategically without compromising your position.",
-          difficulty: "Medium",
-          upvotes: 124,
-          downvotes: 12,
-          created_at: new Date().toISOString(),
-          rules:
-            "1. Set up the Jenga tower as usual.\n2. Assign each block a chess piece value (pawn, knight, bishop, rook, queen, king).\n3. Players take turns removing blocks according to chess movement rules.\n4. The game ends when the tower falls or a player has no valid moves.",
-          setup_instructions:
-            "1. Build the Jenga tower in the standard 3x3 pattern.\n2. Use stickers or markers to label each block with a chess piece.\n3. Decide who goes first with a coin toss.",
-          user: { email: "demo@example.com", id: "demo-user" },
-          bgg_games: [
-            {
-              id: "bg1",
-              name: "Chess",
-              bgg_id: "171",
-              image_url: "/placeholder.svg?height=300&width=300",
-              bgg_url: "https://boardgamegeek.com/boardgame/171/chess",
-            },
-            {
-              id: "bg2",
-              name: "Jenga",
-              bgg_id: "2452",
-              image_url: "/placeholder.svg?height=300&width=300",
-              bgg_url: "https://boardgamegeek.com/boardgame/2452/jenga",
-            },
-          ],
-          // Mock hashtags for demo
-          hashtags: [
-            { id: "h1", name: "strategy" },
-            { id: "h2", name: "dexterity" },
-            { id: "h3", name: "2player" },
-          ],
-        },
-        "2": {
-          id: "2",
-          title: "Monopoly Mayhem: Monopoly + Uno",
-          description: "Use Uno cards to determine movement and property actions in this fast-paced Monopoly variant.",
-          difficulty: "Easy",
-          upvotes: 87,
-          downvotes: 5,
-          created_at: new Date().toISOString(),
-          rules:
-            "1. Deal 7 Uno cards to each player.\n2. On your turn, play an Uno card to determine your action.\n3. Number cards move you that many spaces.\n4. Special cards have unique effects (Skip: skip next player, Reverse: change direction, etc.).\n5. First player to own 3 complete property sets wins.",
-          setup_instructions:
-            "1. Set up the Monopoly board normally.\n2. Shuffle the Uno deck and place it near the board.\n3. Give each player starting money as in regular Monopoly.",
-          user: { email: "demo@example.com", id: "demo-user" },
-          bgg_games: [
-            {
-              id: "bg3",
-              name: "Monopoly",
-              bgg_id: "1406",
-              image_url: "/placeholder.svg?height=300&width=300",
-              bgg_url: "https://boardgamegeek.com/boardgame/1406/monopoly",
-            },
-            {
-              id: "bg4",
-              name: "Uno",
-              bgg_id: "2223",
-              image_url: "/placeholder.svg?height=300&width=300",
-              bgg_url: "https://boardgamegeek.com/boardgame/2223/uno",
-            },
-          ],
-          // Mock hashtags for demo
-          hashtags: [
-            { id: "h4", name: "family" },
-            { id: "h5", name: "cards" },
-            { id: "h6", name: "quick" },
-          ],
-        },
-      }
-
-      remix = mockRemixes[params.id] || null
-    }
-
-    // If still no remix, show 404
-    if (!remix) {
-      notFound()
-    }
-  }
-
-  // Get user votes and favorite status
-  let userVotes = {}
-  let favoriteStatus = {}
-
-  try {
-    ;[userVotes, favoriteStatus] = await Promise.all([getUserVotes([params.id]), getFavoriteStatus([params.id])])
-  } catch (error) {
-    console.error("Error getting user votes or favorites:", error)
-    // Continue with empty data
-  }
-
-  // Get tags - either from database or mock data
-  let tags = []
-  try {
-    if (remix.bgg_games) {
-      // Use game names as tags
-      tags = remix.bgg_games.map((game: any) => ({
-        id: game.id,
-        name: game.name,
-      }))
-    } else {
-      const { data: tagData } = await supabase
-        .from("remix_tags")
-        .select(`
-          tags (id, name)
-        `)
-        .eq("remix_id", params.id)
-
-      tags = tagData?.map((t) => t.tags) || []
+    if (data) {
+      remix = data
     }
   } catch (error) {
-    console.error("Error getting tags:", error)
-    // Continue with empty tags
+    console.error("Error fetching remix:", error)
   }
 
-  // Get hashtags
-  let hashtags = remix.hashtags || []
-  if (!hashtags.length) {
+  // If no remix found, return 404
+  if (!remix) {
+    notFound()
+  }
+
+  // Get user votes and favorites
+  if (isAuthenticated) {
     try {
-      const { data: hashtagData } = await supabase
-        .from("remix_hashtags")
-        .select(`
-          hashtags (id, name)
-        `)
-        .eq("remix_id", params.id)
-
-      hashtags = hashtagData?.map((h: any) => h.hashtags) || []
+      const [votes, favorites] = await Promise.all([
+        getUserVotes([remixId]),
+        getFavoriteStatus([remixId])
+      ])
+      userVotes = votes
+      favoriteStatus = favorites
     } catch (error) {
-      console.error("Error getting hashtags:", error)
-      // Continue with empty hashtags
+      console.error("Error getting user votes or favorites:", error)
     }
   }
 
@@ -212,16 +111,16 @@ export default async function RemixDetailPage({
                 <h1 className="text-3xl md:text-4xl font-bold mb-2 md:mb-0">{remix.title}</h1>
                 <div className="flex items-center space-x-4">
                   <VoteButtons
-                    remixId={params.id}
+                    remixId={remixId}
                     upvotes={remix.upvotes || 0}
                     downvotes={remix.downvotes || 0}
-                    userVote={userVotes?.[params.id]}
+                    userVote={userVotes?.[remixId] || null}
                     isAuthenticated={isAuthenticated}
                     className="bg-white/10 rounded-full px-2 py-1"
                   />
                   <FavoriteButton
-                    remixId={params.id}
-                    isFavorited={favoriteStatus?.[params.id]}
+                    remixId={remixId}
+                    isFavorited={favoriteStatus?.[remixId] || false}
                     isAuthenticated={isAuthenticated}
                     className="bg-white/10 rounded-full p-2"
                   />
@@ -232,138 +131,95 @@ export default async function RemixDetailPage({
               </div>
               <p className="text-lg text-gray-200">{remix.description}</p>
 
-              {/* Game Tags - Now clickable */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {tags.map((tag: any, index: number) => (
-                  <Link href={`/browse?game=${encodeURIComponent(tag.name)}`} key={index}>
-                    <Badge className="bg-[#FFBC42] hover:bg-[#e5a93b] text-[#2A2B2A] cursor-pointer">{tag.name}</Badge>
-                  </Link>
+              {/* Game Tags */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {remix.games?.map((gameRel: any) => (
+                  <a
+                    key={gameRel.game.bgg_id}
+                    href={`/browse?game=${encodeURIComponent(gameRel.game.name)}`}
+                    className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-sm"
+                  >
+                    {gameRel.game.name}
+                  </a>
                 ))}
-                <Badge
-                  className={`
-                  ${
-                    remix.difficulty === "Easy"
-                      ? "bg-green-500"
-                      : remix.difficulty === "Medium"
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                  } text-white
-                `}
-                >
-                  {remix.difficulty}
-                </Badge>
               </div>
 
-              {/* Hashtags section - Already clickable */}
-              {hashtags.length > 0 && (
-                <div className="mt-4">
-                  <div className="flex flex-wrap gap-2">
-                    {hashtags.map((hashtag: any, index: number) => (
-                      <Link href={`/browse?hashtag=${encodeURIComponent(hashtag.name)}`} key={index}>
-                        <Badge className="bg-[#FF6B35] hover:bg-[#e55a2a] text-white cursor-pointer">
-                          <Hash size={14} className="mr-1" />
-                          {hashtag.name}
-                        </Badge>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Hashtags */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {remix.hashtags?.map((hashtagRel: any) => (
+                  <a
+                    key={hashtagRel.hashtag.id}
+                    href={`/browse?hashtag=${encodeURIComponent(hashtagRel.hashtag.name)}`}
+                    className="text-[#FFBC42] hover:text-[#ffd175] text-sm"
+                  >
+                    #{hashtagRel.hashtag.name}
+                  </a>
+                ))}
+              </div>
             </div>
 
-            {/* Required Games section - Now with Amazon affiliate links */}
+            {/* Games section */}
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-[#004E89] mb-4">Required Games</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {remix.bgg_games &&
-                  remix.bgg_games.map((game: any) => (
-                    <div key={game.id} className="border rounded-lg overflow-hidden shadow-sm">
-                      <div className="h-40 bg-gray-100">
-                        {game.image_url ? (
-                          <img
-                            src={game.image_url || "/placeholder.svg"}
-                            alt={game.name}
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            No image available
-                          </div>
+                {remix.games?.map((gameRel: any) => (
+                  <div key={gameRel.game.bgg_id} className="border rounded-lg overflow-hidden shadow-sm">
+                    <div className="h-40 bg-gray-100">
+                      {gameRel.game.image_url ? (
+                        <img
+                          src={gameRel.game.image_url}
+                          alt={gameRel.game.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          No image available
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold mb-2">{gameRel.game.name}</h3>
+                      <div className="flex gap-2">
+                        <a
+                          href={gameRel.game.bgg_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[#004E89] hover:underline"
+                        >
+                          View on BGG
+                        </a>
+                        {gameRel.game.amazon_url && (
+                          <a
+                            href={gameRel.game.amazon_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#FF6B35] hover:underline"
+                          >
+                            Buy on Amazon
+                          </a>
                         )}
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-bold">
-                          <Link
-                            href={`/browse?game=${encodeURIComponent(game.name)}`}
-                            className="text-[#004E89] hover:text-[#FF6B35] hover:underline"
-                          >
-                            {game.name}
-                          </Link>
-                        </h3>
-                        {game.year_published && <p className="text-sm text-gray-500">({game.year_published})</p>}
-                        <div className="flex flex-col gap-2 mt-3">
-                          <AmazonAffiliateLink gameName={game.name} className="w-full" />
-                          <div className="flex justify-between items-center">
-                            <a
-                              href={game.bgg_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
-                            >
-                              View on BGG
-                              <ExternalLink size={14} className="ml-1" />
-                            </a>
-                            <Link
-                              href={`/browse?game=${encodeURIComponent(game.name)}`}
-                              className="text-[#FF6B35] hover:underline text-sm"
-                            >
-                              Find Remixes
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Rules section */}
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-[#004E89] mb-4">Game Rules</h2>
-              <div className="prose max-w-none">
-                {remix.rules &&
-                  remix.rules.split("\n").map((paragraph: string, i: number) => (
-                    <p key={i} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
+            {/* YouTube video section */}
+            {remix.youtube_url && (
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-[#004E89] mb-4">Watch How to Play</h2>
+                <div className="aspect-w-16 aspect-h-9">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${getYouTubeVideoId(remix.youtube_url)}`}
+                    title="How to play video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full rounded-lg"
+                  />
+                </div>
               </div>
-            </div>
-
-            {/* Setup Instructions section */}
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-[#004E89] mb-4">Setup Instructions</h2>
-              <div className="prose max-w-none">
-                {remix.setup_instructions &&
-                  remix.setup_instructions.split("\n").map((paragraph: string, i: number) => (
-                    <p key={i} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-              </div>
-            </div>
-
-            {/* Creator info with tip jar */}
-            <div className="p-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
-              <p className="text-sm text-gray-500 mb-3 sm:mb-0">
-                Created by {remix.user?.email ? remix.user.email.split("@")[0] : "Anonymous"} •{" "}
-                {new Date(remix.created_at).toLocaleDateString()}
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Enjoyed this remix?</span>
-                <TipJar />
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="mt-8 text-center">
@@ -376,4 +232,19 @@ export default async function RemixDetailPage({
       <Footer />
     </>
   )
+}
+
+function getYouTubeVideoId(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    if (urlObj.hostname === 'youtu.be') {
+      return urlObj.pathname.slice(1)
+    }
+    if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
+      return urlObj.searchParams.get('v') || ''
+    }
+  } catch (error) {
+    console.error('Invalid YouTube URL:', error)
+  }
+  return ''
 }

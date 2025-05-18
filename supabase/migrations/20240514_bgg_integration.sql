@@ -10,9 +10,12 @@ CREATE TABLE bgg_games (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add rules and setup instructions to remixes table
-ALTER TABLE remixes ADD COLUMN rules TEXT;
-ALTER TABLE remixes ADD COLUMN setup_instructions TEXT;
+-- Add columns to remixes table
+ALTER TABLE remixes 
+ADD COLUMN IF NOT EXISTS rules TEXT,
+ADD COLUMN IF NOT EXISTS setup_instructions TEXT NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS youtube_url TEXT,
+ADD COLUMN IF NOT EXISTS max_players INTEGER;
 
 -- Create index for faster searches
 CREATE INDEX bgg_games_bgg_id_idx ON bgg_games(bgg_id);

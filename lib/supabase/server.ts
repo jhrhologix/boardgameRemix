@@ -1,50 +1,31 @@
-import { createServerClient } from "@supabase/ssr"
-import type { cookies } from "next/headers"
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { type CookieOptions } from '@supabase/ssr'
 
-export function createClient(cookieStore: ReturnType<typeof cookies>) {
-  // Check if environment variables are available
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn(
-      "Supabase URL or Anon Key not found. Authentication features will be disabled. Please check your environment variables.",
-    )
-
-    // Return a mock client for development/preview
-    return {
-      auth: {
-        getSession: async () => ({ data: { session: null } }),
-        signOut: async () => ({ error: null }),
+export function createClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          const cookieStore = cookies()
+          return cookieStore.get(name)?.value ?? ''
+        },
+        set(name: string, value: string, options: CookieOptions = {}) {
+          const cookieStore = cookies()
+          if (value) {
+            cookieStore.set(name, value, {
+              ...options,
+              secure: process.env.NODE_ENV === 'production',
+            })
+          }
+        },
+        remove(name: string, options: CookieOptions = {}) {
+          const cookieStore = cookies()
+          cookieStore.delete(name)
+        },
       },
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            single: () => ({ data: null, error: null }),
-            in: () => ({ data: [], error: null }),
-          }),
-          in: () => ({ data: [], error: null }),
-        }),
-        insert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
-        update: () => ({ eq: () => ({ data: null, error: null }) }),
-        delete: () => ({ eq: () => ({ data: null, error: null }) }),
-      }),
-      rpc: () => ({ data: [], error: null }),
-    } as any
-  }
-
-  // Create the actual client if environment variables are available
-  return createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options: any) {
-        cookieStore.set({ name, value: "", ...options })
-      },
-    },
-  })
+    }
+  )
 }

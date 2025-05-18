@@ -51,30 +51,23 @@ export default async function FeaturedRemixes() {
     },
   ]
 
-  // Check if user is authenticated
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const cookieStore = await cookies()
+  const supabase = await createClient()
+  
   let isAuthenticated = false
-
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const { data: { session } } = await supabase.auth.getSession()
     isAuthenticated = !!session
   } catch (error) {
     console.error("Error checking authentication:", error)
   }
 
   // Get user votes and favorite status
-  let userVotes = {}
-  let favoriteStatus = {}
-
-  try {
-    const remixIds = featuredGames.map((game) => game.id)
-    ;[userVotes, favoriteStatus] = await Promise.all([getUserVotes(remixIds), getFavoriteStatus(remixIds)])
-  } catch (error) {
-    console.error("Error getting user votes or favorites:", error)
-  }
+  const remixIds = featuredGames.map((game) => game.id)
+  const [userVotes, favoriteStatus] = await Promise.all([
+    getUserVotes(remixIds),
+    getFavoriteStatus(remixIds)
+  ])
 
   return (
     <section className="py-16 container mx-auto px-4">

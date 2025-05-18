@@ -4,12 +4,14 @@ import VoteButtons from "./vote-buttons"
 import FavoriteButton from "./favorite-button"
 import HashtagDisplay from "./hashtag-display"
 import Link from "next/link"
+import RemixCompositeImage from "./remix-composite-image"
+import type { BGGGame } from "@/lib/bgg-api"
 
 export interface GameCardProps {
   id: string
   title: string
   description: string
-  imageSrc: string
+  games: BGGGame[]
   tags: string[]
   difficulty: "Easy" | "Medium" | "Hard"
   upvotes: number
@@ -24,7 +26,7 @@ export default function GameCard({
   id,
   title,
   description,
-  imageSrc,
+  games,
   tags,
   difficulty,
   upvotes = 0,
@@ -43,9 +45,8 @@ export default function GameCard({
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg h-full flex flex-col">
       <div className="relative h-48 overflow-hidden">
-        <img
-          src={imageSrc || "/placeholder.svg"}
-          alt={title}
+        <RemixCompositeImage
+          games={games}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
         <div className={`absolute top-2 right-2 ${difficultyColor} text-white text-xs px-2 py-1 rounded-full`}>
