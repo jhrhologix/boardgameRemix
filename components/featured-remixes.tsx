@@ -5,138 +5,126 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 
-export default async function FeaturedRemixes() {
-  // This would normally come from your database
-  const featuredGames = [
-    {
-      id: "1",
-      title: "Tactical Tower: Chess + Jenga",
-      description:
-        "A strategic game where each Jenga piece represents a chess piece. Remove pieces strategically without compromising your position.",
-      tags: ["Chess", "Jenga"],
-      difficulty: "Medium" as const,
-      upvotes: 124,
-      downvotes: 12,
-      games: [
-        {
-          name: "Chess",
-          id: "chess",
-          bggUrl: "https://boardgamegeek.com/boardgame/171/chess",
-          image: "/placeholder.svg"
-        },
-        {
-          name: "Jenga",
-          id: "jenga",
-          bggUrl: "https://boardgamegeek.com/boardgame/2452/jenga",
-          image: "/placeholder.svg"
-        }
-      ],
-      hashtags: ["strategy", "dexterity", "abstract", "puzzle", "2player"]
-    },
-    {
-      id: "2",
-      title: "Monopoly Mayhem: Monopoly + Uno",
-      description: "Use Uno cards to determine movement and property actions in this fast-paced Monopoly variant.",
-      tags: ["Monopoly", "Uno"],
-      difficulty: "Easy" as const,
-      upvotes: 87,
-      downvotes: 5,
-      games: [
-        {
-          name: "Monopoly",
-          id: "monopoly",
-          bggUrl: "https://boardgamegeek.com/boardgame/1406/monopoly",
-          image: "/placeholder.svg"
-        },
-        {
-          name: "Uno",
-          id: "uno",
-          bggUrl: "https://boardgamegeek.com/boardgame/2223/uno",
-          image: "/placeholder.svg"
-        }
-      ],
-      hashtags: ["family", "card", "quick", "economic", "party"]
-    },
-    {
-      id: "3",
-      title: "Risk & Reward: Risk + Poker",
-      description:
-        "Combine territory control with poker hands to determine battle outcomes in this game of chance and strategy.",
-      tags: ["Risk", "Playing Cards"],
-      difficulty: "Hard" as const,
-      upvotes: 56,
-      downvotes: 23,
-      games: [
-        {
-          name: "Risk",
-          id: "risk",
-          bggUrl: "https://boardgamegeek.com/boardgame/181/risk",
-          image: "/placeholder.svg"
-        },
-        {
-          name: "Poker",
-          id: "poker",
-          bggUrl: "https://boardgamegeek.com/boardgame/1115/poker",
-          image: "/placeholder.svg"
-        }
-      ],
-      hashtags: ["strategy", "card", "bluffing", "war", "area control"]
-    },
-    {
-      id: "4",
-      title: "Scrabble Quest: Scrabble + Catan",
-      description: "Build words to collect resources and expand your vocabulary empire across the board.",
-      tags: ["Scrabble", "Catan"],
-      difficulty: "Medium" as const,
-      upvotes: 142,
-      downvotes: 18,
-      games: [
-        {
-          name: "Scrabble",
-          id: "scrabble",
-          bggUrl: "https://boardgamegeek.com/boardgame/320/scrabble",
-          image: "/placeholder.svg"
-        },
-        {
-          name: "Catan",
-          id: "catan",
-          bggUrl: "https://boardgamegeek.com/boardgame/13/catan",
-          image: "/placeholder.svg"
-        }
-      ],
-      hashtags: ["word", "resource", "strategy", "tile", "competitive"]
-    },
-  ]
+interface Game {
+  name: string
+  id: string
+  bggUrl: string
+  image: string
+}
 
-  const cookieStore = await cookies()
+interface FeaturedGame {
+  id: string
+  title: string
+  description: string
+  difficulty: "Easy" | "Medium" | "Hard"
+  upvotes: number
+  downvotes: number
+  games: Game[]
+  tags: string[]
+  hashtags: string[]
+}
+
+interface VoteStatus {
+  [key: string]: string | undefined
+}
+
+interface FavoriteStatus {
+  [key: string]: boolean
+}
+
+export default async function FeaturedRemixes() {
+  const cookieStore = cookies()
   const supabase = await createClient()
   
   let isAuthenticated = false
+  let featuredGames: FeaturedGame[] = []
+
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    isAuthenticated = !!session
+    // Get authentication status
+    const { data: { user } } = await supabase.auth.getUser()
+    isAuthenticated = !!user
+
+    // Fetch featured remixes (those with most upvotes)
+    const { data: remixes, error } = await supabase
+      .from('remixes')
+      .select(`
+        id,
+        title,
+        description,
+        difficulty,
+        upvotes,
+        downvotes,
+        created_at,
+        bgg_games:remix_games (
+          game:bgg_game_id (
+            name,
+            bgg_id,
+            bgg_url,
+            image_url
+          )
+        ),
+        hashtags:remix_hashtags (
+          hashtag:hashtag_id (
+            name
+          )
+        )
+      `)
+      .order('upvotes', { ascending: false })
+      .limit(4)
+
+    if (error) {
+      console.error("Error fetching featured remixes:", error)
+      throw error
+    }
+
+    featuredGames = remixes.map(remix => ({
+      id: remix.id,
+      title: remix.title,
+      description: remix.description,
+      difficulty: remix.difficulty as "Easy" | "Medium" | "Hard",
+      upvotes: remix.upvotes || 0,
+      downvotes: remix.downvotes || 0,
+      games: remix.bgg_games
+        .filter((g: any) => g && g.game)
+        .map((g: any) => ({
+          name: g.game.name,
+          id: g.game.bgg_id,
+          bggUrl: g.game.bgg_url,
+          image: g.game.image_url || "/placeholder.svg"
+        })),
+      tags: remix.bgg_games
+        .filter((g: any) => g && g.game)
+        .map((g: any) => g.game.name),
+      hashtags: remix.hashtags
+        .filter((h: any) => h && h.hashtag)
+        .map((h: any) => h.hashtag.name)
+    }))
   } catch (error) {
-    console.error("Error checking authentication:", error)
+    console.error("Error in FeaturedRemixes:", error)
+    featuredGames = []
   }
 
   // Get user votes and favorite status
   const remixIds = featuredGames.map((game) => game.id)
-  const [userVotes, favoriteStatus] = await Promise.all([
-    getUserVotes(remixIds),
-    getFavoriteStatus(remixIds)
-  ])
+  let userVotes: VoteStatus = {}
+  let favoriteStatus: FavoriteStatus = {}
+
+  try {
+    [userVotes, favoriteStatus] = await Promise.all([
+      getUserVotes(remixIds),
+      getFavoriteStatus(remixIds)
+    ])
+  } catch (error) {
+    console.error("Error getting user votes or favorites:", error)
+  }
 
   return (
-    <section className="py-16 container mx-auto px-4">
-      <div className="mb-10 flex flex-col sm:flex-row justify-between items-center">
-        <div className="text-center sm:text-left mb-4 sm:mb-0">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#004E89] mb-4">Featured Remixes</h2>
-          <p className="text-gray-600 max-w-2xl">
-            Check out these popular game remixes created by our community. Each one offers a fresh way to play with
-            games you already own.
-          </p>
-        </div>
-        <SortOptions />
+    <section className="py-16 container mx-auto px-4 bg-black">
+      <div className="mb-10 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-[#FF6B35] mb-4">Featured Remixes</h2>
+        <p className="text-gray-300 max-w-2xl mx-auto">
+          Check out some of our most popular game remixes, voted by the community.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -149,11 +137,16 @@ export default async function FeaturedRemixes() {
             isAuthenticated={isAuthenticated}
           />
         ))}
+        {featuredGames.length === 0 && (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">No featured remixes available yet.</p>
+          </div>
+        )}
       </div>
       <div className="flex justify-end mt-8">
         <Link 
-          href="/browse?sort=popular" 
-          className="inline-flex items-center gap-2 text-[#004E89] hover:text-[#FF6B35] font-semibold transition-colors"
+          href="/browse?sort=upvotes" 
+          className="inline-flex items-center gap-2 text-[#FF6B35] hover:text-[#e55a2a] font-semibold transition-colors"
         >
           View More Popular Remixes
           <svg

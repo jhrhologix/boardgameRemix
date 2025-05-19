@@ -17,21 +17,21 @@ export default async function Header() {
   }
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-black border-b border-[#004E89]/20 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <nav className="flex items-center space-x-6">
-            <Link href="/browse" className="text-gray-700 hover:text-[#FF6B35]">
+            <Link href="/browse" className="text-gray-300 hover:text-[#FF6B35] transition-colors">
               Browse Remixes
             </Link>
-            <Link href="/popular" className="text-gray-700 hover:text-[#FF6B35]">
+            <Link href="/popular" className="text-gray-300 hover:text-[#FF6B35] transition-colors">
               Popular
             </Link>
-            <Link href="/submit" className="text-gray-700 hover:text-[#FF6B35]">
+            <Link href="/submit" className="text-gray-300 hover:text-[#FF6B35] transition-colors">
               Submit a Remix
             </Link>
             {session && (
-              <Link href="/favorites" className="text-gray-700 hover:text-[#FF6B35]">
+              <Link href="/favorites" className="text-gray-300 hover:text-[#FF6B35] transition-colors">
                 My Favorites
               </Link>
             )}
@@ -45,7 +45,7 @@ export default async function Header() {
               <UserMenu user={session.user} />
             ) : (
               <Link href="/auth">
-                <Button variant="outline" className="hidden sm:inline-flex">
+                <Button variant="outline" className="hidden sm:inline-flex bg-black text-[#FF6B35] border-[#004E89]/20 hover:bg-[#004E89]/20 hover:text-[#FF6B35]">
                   Log in
                 </Button>
               </Link>

@@ -25,18 +25,26 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) throw error
 
+      // Verify the session was created
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Failed to create session')
+
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) throw new Error('Failed to get user data')
+
+      // Only redirect if we have a valid session and user
       router.push(callbackUrl || '/')
       router.refresh()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
       setLoading(false)
     }
   }
@@ -44,27 +52,33 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-white">Email</Label>
         <Input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          className="bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="text-white">Password</Label>
         <Input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          className="bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
         />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button 
+        type="submit" 
+        className="w-full bg-[#FF6B35] hover:bg-[#e55a2a] text-white" 
+        disabled={loading}
+      >
         {loading ? 'Signing in...' : 'Sign in'}
       </Button>
     </form>

@@ -40,17 +40,21 @@ export default function SortOptions({ className }: SortOptionsProps) {
     <div className={className}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2 bg-black text-[#FF6B35] border-[#004E89]/20 hover:bg-[#004E89]/20 hover:text-[#FF6B35]">
             {selectedLabel}
             <ChevronDown size={16} />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="bg-black border-[#004E89]/20">
           {sortOptions.map((option) => (
             <DropdownMenuItem
               key={option.value}
               onClick={() => handleSortChange(option.value)}
-              className={selectedSort === option.value ? "bg-gray-100 font-medium" : ""}
+              className={`${
+                selectedSort === option.value 
+                  ? "bg-[#004E89]/20 font-medium text-[#FF6B35]" 
+                  : "text-gray-300 hover:bg-[#004E89]/10 hover:text-[#FF6B35]"
+              }`}
             >
               {option.label}
             </DropdownMenuItem>

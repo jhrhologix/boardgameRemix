@@ -15,6 +15,16 @@ const nextConfig = {
         hostname: 'cf.geekdo-images.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cf.geekdo-static.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'boardgamegeek.com',
+        pathname: '/images/**',
+      }
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

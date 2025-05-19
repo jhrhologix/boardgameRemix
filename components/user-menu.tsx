@@ -38,38 +38,41 @@ export default function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuTrigger className="focus:outline-none">
         <Avatar>
           <AvatarImage src={user.user_metadata?.avatar_url || "/placeholder.svg"} />
-          <AvatarFallback className="bg-[#004E89] text-white">{getInitials()}</AvatarFallback>
+          <AvatarFallback className="bg-[#FF6B35] text-white">{getInitials()}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <p className="text-sm font-medium">{user.email}</p>
+      <DropdownMenuContent align="end" className="w-56 bg-black border border-[#333]">
+        <div className="px-4 py-3 border-b border-[#333]">
+          <p className="text-sm font-medium text-white">{user.email}</p>
         </div>
 
         <Link href="/profile">
-          <DropdownMenuItem>
+          <DropdownMenuItem className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer">
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
         </Link>
 
         <Link href="/favorites">
-          <DropdownMenuItem>
+          <DropdownMenuItem className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer">
             <Heart className="mr-2 h-4 w-4" />
             <span>My Favorites</span>
           </DropdownMenuItem>
         </Link>
 
         <Link href="/settings">
-          <DropdownMenuItem>
+          <DropdownMenuItem className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
         </Link>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-[#333]" />
 
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem 
+          onClick={handleSignOut}
+          className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

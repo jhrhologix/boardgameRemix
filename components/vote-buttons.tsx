@@ -18,22 +18,32 @@ interface VoteButtonsProps {
 
 export default function VoteButtons({
   remixId,
-  upvotes,
-  downvotes,
+  upvotes = 0,
+  downvotes = 0,
   userVote,
-  className,
+  className = '',
   isAuthenticated = false,
 }: VoteButtonsProps) {
   const router = useRouter()
-  const [optimisticUpvotes, setOptimisticUpvotes] = useState(upvotes)
-  const [optimisticDownvotes, setOptimisticDownvotes] = useState(downvotes)
-  const [optimisticUserVote, setOptimisticUserVote] = useState(userVote)
+  
+  // Ensure all data is properly typed
+  const safeProps = {
+    remixId: String(remixId),
+    upvotes: Number(upvotes) || 0,
+    downvotes: Number(downvotes) || 0,
+    userVote: userVote ? String(userVote) : undefined,
+    isAuthenticated: Boolean(isAuthenticated),
+  }
+
+  const [optimisticUpvotes, setOptimisticUpvotes] = useState(safeProps.upvotes)
+  const [optimisticDownvotes, setOptimisticDownvotes] = useState(safeProps.downvotes)
+  const [optimisticUserVote, setOptimisticUserVote] = useState(safeProps.userVote)
   const [isVoting, setIsVoting] = useState(false)
 
   const handleVote = async (voteType: "upvote" | "downvote") => {
     // If not authenticated, redirect to login
-    if (!isAuthenticated) {
-      router.push(`/auth/login?callbackUrl=/remixes/${remixId}`)
+    if (!safeProps.isAuthenticated) {
+      router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
       return
     }
 
@@ -72,7 +82,7 @@ export default function VoteButtons({
 
     // Submit the form
     const formData = new FormData()
-    formData.append("remixId", remixId)
+    formData.append("remixId", safeProps.remixId)
     formData.append("voteType", action)
 
     try {
@@ -82,20 +92,20 @@ export default function VoteButtons({
         // Handle authentication error
         if (result.error === "authentication") {
           // Revert optimistic updates
-          setOptimisticUpvotes(upvotes)
-          setOptimisticDownvotes(downvotes)
-          setOptimisticUserVote(userVote)
+          setOptimisticUpvotes(safeProps.upvotes)
+          setOptimisticDownvotes(safeProps.downvotes)
+          setOptimisticUserVote(safeProps.userVote)
 
           // Redirect to login
-          router.push(`/auth/login?callbackUrl=/remixes/${remixId}`)
+          router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
         }
       }
     } catch (error) {
       console.error("Error voting:", error)
       // Revert optimistic updates on error
-      setOptimisticUpvotes(upvotes)
-      setOptimisticDownvotes(downvotes)
-      setOptimisticUserVote(userVote)
+      setOptimisticUpvotes(safeProps.upvotes)
+      setOptimisticDownvotes(safeProps.downvotes)
+      setOptimisticUserVote(safeProps.userVote)
     } finally {
       setIsVoting(false)
     }
@@ -113,19 +123,19 @@ export default function VoteButtons({
               onClick={() => handleVote("upvote")}
               className={cn(
                 "p-1 rounded-full transition-colors",
-                isAuthenticated && optimisticUserVote === "upvote"
+                safeProps.isAuthenticated && optimisticUserVote === "upvote"
                   ? "text-green-500 bg-green-100"
                   : "text-gray-500 hover:text-green-500 hover:bg-green-100",
-                !isAuthenticated && "cursor-pointer",
+                !safeProps.isAuthenticated && "cursor-pointer",
                 isVoting && "opacity-50 cursor-not-allowed",
               )}
               aria-label="Upvote"
               disabled={isVoting}
             >
-              {!isAuthenticated ? <LogIn size={16} className="text-gray-400" /> : <ThumbsUp size={16} />}
+              {!safeProps.isAuthenticated ? <LogIn size={16} className="text-gray-400" /> : <ThumbsUp size={16} />}
             </button>
           </TooltipTrigger>
-          {!isAuthenticated && (
+          {!safeProps.isAuthenticated && (
             <TooltipContent>
               <p>Log in to vote</p>
             </TooltipContent>
@@ -149,19 +159,19 @@ export default function VoteButtons({
               onClick={() => handleVote("downvote")}
               className={cn(
                 "p-1 rounded-full transition-colors",
-                isAuthenticated && optimisticUserVote === "downvote"
+                safeProps.isAuthenticated && optimisticUserVote === "downvote"
                   ? "text-red-500 bg-red-100"
                   : "text-gray-500 hover:text-red-500 hover:bg-red-100",
-                !isAuthenticated && "cursor-pointer",
+                !safeProps.isAuthenticated && "cursor-pointer",
                 isVoting && "opacity-50 cursor-not-allowed",
               )}
               aria-label="Downvote"
               disabled={isVoting}
             >
-              {!isAuthenticated ? <LogIn size={16} className="text-gray-400" /> : <ThumbsDown size={16} />}
+              {!safeProps.isAuthenticated ? <LogIn size={16} className="text-gray-400" /> : <ThumbsDown size={16} />}
             </button>
           </TooltipTrigger>
-          {!isAuthenticated && (
+          {!safeProps.isAuthenticated && (
             <TooltipContent>
               <p>Log in to vote</p>
             </TooltipContent>

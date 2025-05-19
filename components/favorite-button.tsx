@@ -17,17 +17,25 @@ interface FavoriteButtonProps {
 export default function FavoriteButton({
   remixId,
   isFavorited = false,
-  className,
+  className = '',
   isAuthenticated = false,
 }: FavoriteButtonProps) {
   const router = useRouter()
-  const [optimisticFavorite, setOptimisticFavorite] = useState(isFavorited)
+
+  // Ensure all data is properly typed
+  const safeProps = {
+    remixId: String(remixId),
+    isFavorited: Boolean(isFavorited),
+    isAuthenticated: Boolean(isAuthenticated),
+  }
+
+  const [optimisticFavorite, setOptimisticFavorite] = useState(safeProps.isFavorited)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleToggleFavorite = async () => {
     // Redirect to login if not authenticated
-    if (!isAuthenticated) {
-      router.push(`/auth/login?callbackUrl=/remixes/${remixId}`)
+    if (!safeProps.isAuthenticated) {
+      router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
       return
     }
 
@@ -37,7 +45,7 @@ export default function FavoriteButton({
     setOptimisticFavorite(!optimisticFavorite)
 
     const formData = new FormData()
-    formData.append("remixId", remixId)
+    formData.append("remixId", safeProps.remixId)
 
     try {
       const result = await toggleFavorite(formData)
@@ -46,16 +54,16 @@ export default function FavoriteButton({
         // Handle authentication error
         if (result.error === "authentication") {
           // Revert optimistic update
-          setOptimisticFavorite(isFavorited)
+          setOptimisticFavorite(safeProps.isFavorited)
 
           // Redirect to login
-          router.push(`/auth/login?callbackUrl=/remixes/${remixId}`)
+          router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
         }
       }
     } catch (error) {
       console.error("Error toggling favorite:", error)
       // Revert optimistic update on error
-      setOptimisticFavorite(isFavorited)
+      setOptimisticFavorite(safeProps.isFavorited)
     } finally {
       setIsSubmitting(false)
     }
@@ -69,7 +77,7 @@ export default function FavoriteButton({
             onClick={handleToggleFavorite}
             className={cn(
               "p-1 rounded-full transition-colors",
-              isAuthenticated && optimisticFavorite
+              safeProps.isAuthenticated && optimisticFavorite
                 ? "text-red-500 bg-red-100"
                 : "text-gray-500 hover:text-red-500 hover:bg-red-100",
               className,
@@ -78,14 +86,14 @@ export default function FavoriteButton({
             aria-label={optimisticFavorite ? "Remove from favorites" : "Add to favorites"}
             disabled={isSubmitting}
           >
-            {!isAuthenticated ? (
+            {!safeProps.isAuthenticated ? (
               <LogIn size={18} className="text-gray-400" />
             ) : (
               <Heart size={18} className={cn(optimisticFavorite ? "fill-red-500" : "fill-none")} />
             )}
           </button>
         </TooltipTrigger>
-        {!isAuthenticated && (
+        {!safeProps.isAuthenticated && (
           <TooltipContent>
             <p>Log in to save to favorites</p>
           </TooltipContent>
