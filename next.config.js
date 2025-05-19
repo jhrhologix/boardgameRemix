@@ -14,21 +14,9 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cf.geekdo-images.com',
         pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cf.geekdo-static.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'boardgamegeek.com',
-        pathname: '/images/**',
       }
     ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: true
   },
   webpack(config) {
     config.module.rules.push({

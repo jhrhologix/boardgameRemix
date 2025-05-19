@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -18,10 +18,28 @@ import { Badge } from "@/components/ui/badge"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import ReCAPTCHA from "react-google-recaptcha"
 
 interface SubmitRemixFormProps {
   userId: string
   remixId?: string
+}
+
+interface GameRelation {
+  game: {
+    bgg_id: string
+    name: string
+    year_published: number
+    image_url: string | null
+    bgg_url: string
+  }
+}
+
+interface HashtagRelation {
+  hashtag: {
+    id: string
+    name: string
+  }
 }
 
 export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProps) {
@@ -37,6 +55,8 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
   const [error, setError] = useState<string | null>(null)
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [maxPlayers, setMaxPlayers] = useState("")
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
 
   // Tag state
   const [hashtag, setHashtag] = useState("")
@@ -99,8 +119,8 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
         
         // Set selected games
         const games = remix.bgg_games
-          .filter(gameRel => gameRel.game) // Filter out any null game references
-          .map(gameRel => ({
+          .filter((gameRel: GameRelation) => gameRel.game) // Filter out any null game references
+          .map((gameRel: GameRelation) => ({
             id: gameRel.game.bgg_id,
             name: gameRel.game.name,
             yearPublished: gameRel.game.year_published,
@@ -113,8 +133,8 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
 
         // Set hashtags
         const tags = remix.hashtags
-          .filter(hashtagRel => hashtagRel.hashtag) // Filter out any null hashtag references
-          .map(hashtagRel => hashtagRel.hashtag.name)
+          .filter((hashtagRel: HashtagRelation) => hashtagRel.hashtag) // Filter out any null hashtag references
+          .map((hashtagRel: HashtagRelation) => hashtagRel.hashtag.name)
         console.log('Processed hashtags:', tags)
         setHashtags(tags)
       } catch (err) {
@@ -219,18 +239,23 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
       return
     }
 
+    if (!captchaToken) {
+      setError("Please verify that you are human")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       // Verify user is still authenticated
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser()
       
       if (sessionError) {
         console.error("Session error:", sessionError)
         throw new Error("Authentication error. Please try logging in again.")
       }
 
-      if (!session) {
+      if (!user) {
         throw new Error("Your session has expired. Please log in again.")
       }
 
@@ -442,22 +467,29 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
         }
       }
 
-      router.push('/my-remixes')
-      router.refresh()
+      // Reset CAPTCHA after successful submission
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset()
+      }
+      setCaptchaToken(null)
+
+      // Redirect to the remix page
+      router.push(`/remixes/${remix.id}`)
     } catch (err) {
-      console.error("Full error object:", err)
-      setError(
-        err instanceof Error 
-          ? err.message 
-          : "Failed to submit your remix. Please check the console for details."
-      )
-    } finally {
+      console.error("Error submitting remix:", err)
+      setError(err instanceof Error ? err.message : "An error occurred while submitting your remix")
       setIsSubmitting(false)
+
+      // Reset CAPTCHA on error
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset()
+      }
+      setCaptchaToken(null)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -651,14 +683,26 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
         <p className="text-xs text-gray-500">Add a video tutorial to help others learn your remix</p>
       </div>
 
-      <Button type="submit" className="w-full bg-[#FF6B35] hover:bg-[#e55a2a] text-white" disabled={isSubmitting}>
+      <div className="flex justify-center">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
+          onChange={(token) => setCaptchaToken(token)}
+        />
+      </div>
+
+      <Button
+        type="submit"
+        disabled={isSubmitting || !captchaToken}
+        className="w-full bg-[#FF6B35] hover:bg-[#e55a2a] text-white"
+      >
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Submitting...
+            {remixId ? "Updating..." : "Submitting..."}
           </>
         ) : (
-          "Submit Remix"
+          remixId ? "Update Remix" : "Submit Remix"
         )}
       </Button>
     </form>

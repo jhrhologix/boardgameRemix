@@ -9,7 +9,7 @@ import TipJar from '@/components/tip-jar'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Clock } from 'lucide-react'
+import { Clock, User } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import CommentsSection from '@/components/comments-section'
 
 interface RemixData {
   id: string
@@ -31,6 +32,7 @@ interface RemixData {
   upvotes: number
   downvotes: number
   user_id: string
+  creator_username: string
   created_at: string
   duration: number
   games: {
@@ -111,62 +113,74 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
   }, [remix.id, remix.user_id])
 
   const handleDelete = async () => {
-    if (isDeleting) return
+    if (!isOwner || isDeleting) return
 
     setIsDeleting(true)
-    const supabase = createClient()
     try {
-      const { error } = await supabase
+      const supabase = createClient()
+      const { error: deleteError } = await supabase
         .from('remixes')
         .delete()
         .eq('id', remix.id)
 
-      if (error) throw error
+      if (deleteError) throw deleteError
 
-      router.push('/profile')
+      router.push('/browse')
     } catch (err) {
       console.error('Error deleting remix:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete remix')
-    } finally {
       setIsDeleting(false)
     }
   }
 
   return (
-    <div className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden border border-[#333]">
+    <div className="bg-[#1a1a1a] rounded-lg overflow-hidden">
       {/* Header section */}
-      <div className="bg-[#004E89] p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{remix.title}</h1>
-            <div className="flex items-center gap-2 text-gray-300 mb-2">
-              <Clock size={16} />
-              <span>{remix.duration} minutes</span>
+      <div className="p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-[#FF6B35] mb-2">{remix.title}</h1>
+              <div className="flex items-center gap-4 text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} />
+                  <span>{remix.duration} min</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <User size={16} />
+                  <Link href={`/profile/${remix.user_id}`} className="hover:text-[#FF6B35] transition-colors">
+                    {remix.creator_username}
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <VoteButtons
+                remixId={remix.id}
+                upvotes={remix.upvotes}
+                downvotes={remix.downvotes}
+                userVote={userVote}
+                isAuthenticated={isAuthenticated}
+              />
+              {isAuthenticated && (
+                <FavoriteButton
+                  remixId={remix.id}
+                  isFavorited={isFavorited}
+                  isAuthenticated={isAuthenticated}
+                />
+              )}
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <VoteButtons
-              remixId={remix.id}
-              upvotes={remix.upvotes || 0}
-              downvotes={remix.downvotes || 0}
-              userVote={userVote}
-              isAuthenticated={isAuthenticated}
-              className="bg-white/10 rounded-full px-2 py-1"
-            />
-            <FavoriteButton
-              remixId={remix.id}
-              isFavorited={isFavorited}
-              isAuthenticated={isAuthenticated}
-              className="bg-white/10 rounded-full p-2"
-            />
+
+          {/* Action buttons for owner */}
+          <div className="flex items-center gap-4">
             {isOwner && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={() => router.push(`/submit?edit=${remix.id}`)}
-                  className="bg-[#FF6B35] hover:bg-[#e55a2a] text-white"
-                >
-                  Edit
-                </Button>
+              <div className="flex gap-2">
+                <Link href={`/remixes/${remix.id}/edit`}>
+                  <Button variant="outline" className="bg-[#2a2a2a] text-white hover:bg-[#333]">
+                    Edit
+                  </Button>
+                </Link>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive">Delete</Button>
@@ -196,7 +210,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
             )}
           </div>
         </div>
-        <p className="text-lg text-gray-200">{remix.description}</p>
+        <p className="text-lg text-gray-200 mt-4">{remix.description}</p>
 
         {/* Game Tags */}
         <div className="flex flex-wrap gap-2 mt-4">
@@ -217,7 +231,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
             <a
               key={hashtagRel.hashtag.name}
               href={`/browse?hashtag=${encodeURIComponent(hashtagRel.hashtag.name)}`}
-              className="text-[#FFBC42] hover:text-[#ffd175] text-sm"
+              className="text-[#FFBC42] hover:text-[#ffd175] text-sm px-2 py-1"
             >
               #{hashtagRel.hashtag.name}
             </a>
@@ -272,6 +286,15 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Comments section */}
+      <div className="p-6 border-t border-[#333]">
+        <CommentsSection
+          remixId={remix.id}
+          isAuthenticated={isAuthenticated}
+          isOwner={isOwner}
+        />
       </div>
     </div>
   )

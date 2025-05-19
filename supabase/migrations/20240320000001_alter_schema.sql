@@ -51,7 +51,21 @@ ALTER TABLE remix_hashtags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies for new tables
+-- Drop existing policies to ensure clean recreation
+DROP POLICY IF EXISTS "Public hashtags are viewable by everyone" ON hashtags;
+DROP POLICY IF EXISTS "Users can create hashtags" ON hashtags;
+DROP POLICY IF EXISTS "Public remix_hashtags are viewable by everyone" ON remix_hashtags;
+DROP POLICY IF EXISTS "Users can create remix_hashtags" ON remix_hashtags;
+DROP POLICY IF EXISTS "Users can delete their own remix_hashtags" ON remix_hashtags;
+DROP POLICY IF EXISTS "Users can view votes" ON user_votes;
+DROP POLICY IF EXISTS "Users can vote once per remix" ON user_votes;
+DROP POLICY IF EXISTS "Users can change their votes" ON user_votes;
+DROP POLICY IF EXISTS "Users can remove their votes" ON user_votes;
+DROP POLICY IF EXISTS "Users can view favorites" ON user_favorites;
+DROP POLICY IF EXISTS "Users can add favorites" ON user_favorites;
+DROP POLICY IF EXISTS "Users can remove their favorites" ON user_favorites;
+
+-- Create RLS policies for hashtags
 CREATE POLICY "Public hashtags are viewable by everyone" ON hashtags
     FOR SELECT USING (true);
 
@@ -59,6 +73,7 @@ CREATE POLICY "Users can create hashtags" ON hashtags
     FOR INSERT TO authenticated
     WITH CHECK (true);
 
+-- Create RLS policies for remix_hashtags
 CREATE POLICY "Public remix_hashtags are viewable by everyone" ON remix_hashtags
     FOR SELECT USING (true);
 
@@ -71,25 +86,28 @@ CREATE POLICY "Users can delete their own remix_hashtags" ON remix_hashtags
     USING (EXISTS (
         SELECT 1 FROM remixes
         WHERE remixes.id = remix_hashtags.remix_id
-        AND remixes.creator_id = auth.uid()
+        AND remixes.user_id = auth.uid()
     ));
 
-CREATE POLICY "Users can view votes" ON user_votes
+-- Create RLS policies for user_votes
+CREATE POLICY "Users can view their own votes" ON user_votes
     FOR SELECT TO authenticated
-    USING (true);
+    USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can vote once per remix" ON user_votes
     FOR INSERT TO authenticated
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can change their votes" ON user_votes
+CREATE POLICY "Users can change their own votes" ON user_votes
     FOR UPDATE TO authenticated
-    USING (auth.uid() = user_id);
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can remove their votes" ON user_votes
+CREATE POLICY "Users can remove their own votes" ON user_votes
     FOR DELETE TO authenticated
     USING (auth.uid() = user_id);
 
+-- Create RLS policies for user_favorites
 CREATE POLICY "Users can view favorites" ON user_favorites
     FOR SELECT TO authenticated
     USING (true);
@@ -103,34 +121,38 @@ CREATE POLICY "Users can remove their favorites" ON user_favorites
     USING (auth.uid() = user_id);
 
 -- Create function to update vote counts
-CREATE OR REPLACE FUNCTION update_remix_votes()
+CREATE OR REPLACE FUNCTION update_remix_votes(remix_id_param UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE remixes SET 
+        upvotes = (
+            SELECT COUNT(*) FROM user_votes 
+            WHERE remix_id = remix_id_param AND vote_type = 'upvote'
+        ),
+        downvotes = (
+            SELECT COUNT(*) FROM user_votes 
+            WHERE remix_id = remix_id_param AND vote_type = 'downvote'
+        )
+    WHERE id = remix_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger function
+CREATE OR REPLACE FUNCTION trigger_update_remix_votes()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        IF NEW.vote_type = 'upvote' THEN
-            UPDATE remixes SET upvotes = upvotes + 1 WHERE id = NEW.remix_id;
-        ELSE
-            UPDATE remixes SET downvotes = downvotes + 1 WHERE id = NEW.remix_id;
-        END IF;
-    ELSIF TG_OP = 'DELETE' THEN
-        IF OLD.vote_type = 'upvote' THEN
-            UPDATE remixes SET upvotes = upvotes - 1 WHERE id = OLD.remix_id;
-        ELSE
-            UPDATE remixes SET downvotes = downvotes - 1 WHERE id = OLD.remix_id;
-        END IF;
-    ELSIF TG_OP = 'UPDATE' AND OLD.vote_type != NEW.vote_type THEN
-        IF NEW.vote_type = 'upvote' THEN
-            UPDATE remixes SET upvotes = upvotes + 1, downvotes = downvotes - 1 WHERE id = NEW.remix_id;
-        ELSE
-            UPDATE remixes SET upvotes = upvotes - 1, downvotes = downvotes + 1 WHERE id = NEW.remix_id;
-        END IF;
+    IF TG_OP = 'DELETE' THEN
+        PERFORM update_remix_votes(OLD.remix_id);
+    ELSE
+        PERFORM update_remix_votes(NEW.remix_id);
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger for vote counts
+DROP TRIGGER IF EXISTS update_remix_votes_trigger ON user_votes;
 CREATE TRIGGER update_remix_votes_trigger
     AFTER INSERT OR UPDATE OR DELETE ON user_votes
     FOR EACH ROW
-    EXECUTE FUNCTION update_remix_votes(); 
+    EXECUTE FUNCTION trigger_update_remix_votes(); 

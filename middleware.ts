@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import type { CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -18,14 +17,14 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: CookieOptions) {
+        set(name: string, value: string, options: any) {
           response.cookies.set({
             name,
             value,
             ...options,
           })
         },
-        remove(name: string, options: CookieOptions) {
+        remove(name: string, options: any) {
           response.cookies.delete({
             name,
             ...options,
@@ -35,18 +34,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
-
-  const isProtectedRoute = request.nextUrl.pathname === '/favorites'
-
-  if (isProtectedRoute) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      const redirectUrl = new URL('/auth', request.url)
-      redirectUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-  }
+  await supabase.auth.getSession()
 
   return response
 }
@@ -58,6 +46,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],

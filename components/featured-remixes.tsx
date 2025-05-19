@@ -5,23 +5,50 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 
-interface Game {
-  name: string
-  id: string
-  bggUrl: string
-  image: string
-}
-
-interface FeaturedGame {
+interface RemixData {
   id: string
   title: string
   description: string
   difficulty: "Easy" | "Medium" | "Hard"
   upvotes: number
   downvotes: number
-  games: Game[]
+  user_id: string
+  creator_username: string
+  games: Array<{
+    name: string
+    id: string
+    bggUrl: string
+    image: string
+  }>
   tags: string[]
   hashtags: string[]
+}
+
+interface SupabaseResponse {
+  id: string
+  title: string
+  description: string
+  difficulty: string
+  upvotes: number
+  downvotes: number
+  user_id: string
+  created_at: string
+  creator: {
+    username: string | null
+  } | null
+  bgg_games: Array<{
+    game: {
+      name: string
+      bgg_id: string
+      image_url: string | null
+      bgg_url: string | null
+    }
+  }>
+  remix_hashtags: Array<{
+    hashtag_id: {
+      name: string
+    }
+  }>
 }
 
 interface VoteStatus {
@@ -37,7 +64,7 @@ export default async function FeaturedRemixes() {
   const supabase = await createClient()
   
   let isAuthenticated = false
-  let featuredGames: FeaturedGame[] = []
+  let featuredGames: RemixData[] = []
 
   try {
     // Get authentication status
@@ -45,60 +72,69 @@ export default async function FeaturedRemixes() {
     isAuthenticated = !!user
 
     // Fetch featured remixes (those with most upvotes)
-    const { data: remixes, error } = await supabase
+    const { data: remixesData, error } = await supabase
       .from('remixes')
       .select(`
         id,
         title,
         description,
         difficulty,
+        user_id,
         upvotes,
         downvotes,
         created_at,
-        bgg_games:remix_games (
+        creator:profiles!user_id(username),
+        bgg_games:remix_games!inner (
           game:bgg_game_id (
             name,
             bgg_id,
-            bgg_url,
-            image_url
+            image_url,
+            bgg_url
           )
         ),
-        hashtags:remix_hashtags (
-          hashtag:hashtag_id (
+        remix_hashtags (
+          hashtag_id (
             name
           )
         )
       `)
       .order('upvotes', { ascending: false })
-      .limit(4)
+      .limit(8)
 
     if (error) {
       console.error("Error fetching featured remixes:", error)
       throw error
     }
 
-    featuredGames = remixes.map(remix => ({
-      id: remix.id,
-      title: remix.title,
-      description: remix.description,
-      difficulty: remix.difficulty as "Easy" | "Medium" | "Hard",
-      upvotes: remix.upvotes || 0,
-      downvotes: remix.downvotes || 0,
-      games: remix.bgg_games
-        .filter((g: any) => g && g.game)
-        .map((g: any) => ({
+    // Type cast and transform the data
+    featuredGames = (remixesData as any[] || []).map(remix => {
+      // Ensure proper difficulty type casting
+      const difficulty = remix.difficulty.charAt(0).toUpperCase() + remix.difficulty.slice(1).toLowerCase()
+      if (!['Easy', 'Medium', 'Hard'].includes(difficulty)) {
+        throw new Error(`Invalid difficulty value: ${difficulty}`)
+      }
+
+      return {
+        id: remix.id,
+        title: remix.title,
+        description: remix.description,
+        difficulty: difficulty as "Easy" | "Medium" | "Hard",
+        upvotes: remix.upvotes || 0,
+        downvotes: remix.downvotes || 0,
+        user_id: remix.user_id,
+        creator_username: remix.creator?.username || 'Unknown User',
+        games: remix.bgg_games.map(g => ({
           name: g.game.name,
           id: g.game.bgg_id,
-          bggUrl: g.game.bgg_url,
+          bggUrl: g.game.bgg_url || `https://boardgamegeek.com/boardgame/${g.game.bgg_id}/${g.game.name.toLowerCase().replace(/\s+/g, '-')}`,
           image: g.game.image_url || "/placeholder.svg"
         })),
-      tags: remix.bgg_games
-        .filter((g: any) => g && g.game)
-        .map((g: any) => g.game.name),
-      hashtags: remix.hashtags
-        .filter((h: any) => h && h.hashtag)
-        .map((h: any) => h.hashtag.name)
-    }))
+        tags: remix.bgg_games.map(g => g.game.name),
+        hashtags: remix.remix_hashtags
+          .filter(h => h && h.hashtag_id)
+          .map(h => h.hashtag_id.name)
+      }
+    })
   } catch (error) {
     console.error("Error in FeaturedRemixes:", error)
     featuredGames = []
@@ -139,7 +175,7 @@ export default async function FeaturedRemixes() {
         ))}
         {featuredGames.length === 0 && (
           <div className="col-span-full text-center py-8">
-            <p className="text-gray-500">No featured remixes available yet.</p>
+            <p className="text-gray-500">No featured remixes available.</p>
           </div>
         )}
       </div>

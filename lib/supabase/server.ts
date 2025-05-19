@@ -1,49 +1,31 @@
 'use server'
 
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { type CookieOptions } from '@supabase/ssr'
+import { headers } from 'next/headers'
+import { Database } from '@/lib/database.types'
 
-async function createClient() {
-  const cookieStore = cookies()
+export async function createClient() {
+  const headersList = await headers()
+  const cookieHeader = headersList.get('cookie') || ''
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async get(name: string) {
-          try {
-            const cookieStore = await cookies()
-            const cookie = cookieStore.get(name)
-            return cookie?.value ?? ''
-          } catch (error) {
-            console.error('Error getting cookie:', error)
-            return ''
-          }
+        get(name: string) {
+          const cookie = headersList.get('cookie')
+          if (!cookie) return null
+          const match = cookie.match(new RegExp(`${name}=([^;]+)`))
+          return match?.[1]
         },
-        async set(name: string, value: string, options: CookieOptions = {}) {
-          try {
-            const cookieStore = await cookies()
-            cookieStore.set(name, value, {
-              ...options,
-              secure: process.env.NODE_ENV === 'production',
-            })
-          } catch (error) {
-            console.error('Error setting cookie:', error)
-          }
+        set(name: string, value: string, options: any) {
+          // Cookie setting is handled by middleware
         },
-        async remove(name: string) {
-          try {
-            const cookieStore = await cookies()
-            cookieStore.delete(name)
-          } catch (error) {
-            console.error('Error removing cookie:', error)
-          }
-        },
-      },
+        remove(name: string, options: any) {
+          // Cookie removal is handled by middleware
+        }
+      }
     }
   )
 }
-
-export { createClient }

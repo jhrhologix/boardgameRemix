@@ -7,58 +7,72 @@ import { cookies } from "next/headers"
 export async function voteOnRemix(formData: FormData) {
   const remixId = formData.get("remixId") as string
   const voteType = formData.get("voteType") as "upvote" | "downvote" | "remove"
-
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient()
 
   try {
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    // Ensure user is authenticated
-    if (!session) {
-      // Return an authentication error instead of redirecting
+    if (userError || !user) {
+      console.error("Authentication error:", userError)
       return { success: false, error: "authentication", message: "You must be logged in to vote" }
     }
 
-    const userId = session.user.id
+    const userId = user.id
 
     // Check if user has already voted on this remix
-    const { data: existingVote } = await supabase
-      .from("votes")
+    const { data: existingVote, error: voteError } = await supabase
+      .from("user_votes")
       .select("*")
       .eq("user_id", userId)
       .eq("remix_id", remixId)
       .single()
 
-    // Handle vote based on type and existing vote
-    if (voteType === "remove" || (existingVote && existingVote.vote_type === voteType)) {
-      // Remove vote if user is removing or clicking the same vote type again
-      if (existingVote) {
-        await supabase.from("votes").delete().eq("id", existingVote.id)
+    if (voteError && voteError.code !== 'PGRST116') {
+      console.error("Error checking vote status:", voteError)
+      return { success: false, error: "unknown", message: "Error checking vote status" }
+    }
 
-        // Update vote count on remix
-        await supabase.rpc("update_vote_count", {
-          remix_id_param: remixId,
-        })
+    // If user is clicking the same vote type again or removing vote, delete the vote
+    if (existingVote && (voteType === existingVote.vote_type || voteType === "remove")) {
+      const { error: deleteError } = await supabase
+        .from("user_votes")
+        .delete()
+        .eq("user_id", userId)
+        .eq("remix_id", remixId)
+
+      if (deleteError) {
+        console.error("Error removing vote:", deleteError)
+        return { success: false, error: "unknown", message: "Error removing vote" }
       }
     } else {
-      // Insert or update vote
-      if (existingVote) {
-        await supabase.from("votes").update({ vote_type: voteType }).eq("id", existingVote.id)
-      } else {
-        await supabase.from("votes").insert({
-          remix_id: remixId,
-          user_id: userId,
-          vote_type: voteType,
-        })
+      // Insert new vote or update existing vote
+      const voteData = {
+        remix_id: remixId,
+        user_id: userId,
+        vote_type: voteType
       }
 
-      // Update vote count on remix
-      await supabase.rpc("update_vote_count", {
-        remix_id_param: remixId,
-      })
+      const { error: upsertError } = await supabase
+        .from("user_votes")
+        .upsert(voteData, { onConflict: 'user_id,remix_id' })
+
+      if (upsertError) {
+        console.error("Error upserting vote:", upsertError)
+        return { success: false, error: "unknown", message: "Error updating vote" }
+      }
+    }
+
+    // Update vote count on remix
+    const { error: updateError } = await supabase.rpc("update_remix_votes", {
+      remix_id_param: remixId,
+    })
+
+    if (updateError) {
+      console.error("Error updating vote count:", updateError)
+      return { success: false, error: "unknown", message: "Error updating vote count" }
     }
 
     revalidatePath("/")
@@ -72,38 +86,58 @@ export async function voteOnRemix(formData: FormData) {
 export async function toggleFavorite(formData: FormData) {
   try {
     const remixId = formData.get("remixId") as string
-
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = await createClient()
 
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    if (!session) {
-      // Return an authentication error instead of redirecting
+    if (userError || !user) {
+      console.error("Authentication error:", userError)
       return { success: false, error: "authentication", message: "You must be logged in to favorite" }
     }
 
-    const userId = session.user.id
+    const userId = user.id
 
     // Check if already favorited
-    const { data: existingFavorite } = await supabase
+    const { data: existingFavorite, error: favoriteError } = await supabase
       .from("favorites")
       .select("*")
       .eq("user_id", userId)
       .eq("remix_id", remixId)
       .single()
 
+    if (favoriteError && favoriteError.code !== 'PGRST116') {
+      console.error("Error checking favorite status:", favoriteError)
+      return { success: false, error: "unknown", message: "Error checking favorite status" }
+    }
+
     if (existingFavorite) {
       // Remove from favorites
-      await supabase.from("favorites").delete().eq("id", existingFavorite.id)
+      const { error: deleteError } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", userId)
+        .eq("remix_id", remixId)
+
+      if (deleteError) {
+        console.error("Error removing favorite:", deleteError)
+        return { success: false, error: "unknown", message: "Error removing favorite" }
+      }
     } else {
       // Add to favorites
-      await supabase.from("favorites").insert({
-        remix_id: remixId,
-        user_id: userId,
-      })
+      const { error: insertError } = await supabase
+        .from("favorites")
+        .insert({
+          remix_id: remixId,
+          user_id: userId,
+        })
+
+      if (insertError) {
+        console.error("Error adding favorite:", insertError)
+        return { success: false, error: "unknown", message: "Error adding favorite" }
+      }
     }
 
     revalidatePath("/")
@@ -118,20 +152,25 @@ export async function toggleFavorite(formData: FormData) {
 export async function getFavoriteStatus(remixIds: string[]) {
   if (!remixIds.length) return {}
 
-  const supabase = await createClient()
-
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (userError || !user) {
+      console.error("Authentication error:", userError)
       return {}
     }
 
-    const { data } = await supabase
+    const { data, error: favoritesError } = await supabase
       .from('favorites')
       .select('remix_id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .in('remix_id', remixIds)
+
+    if (favoritesError) {
+      console.error("Error fetching favorites:", favoritesError)
+      return {}
+    }
 
     return data?.reduce((acc, fav) => ({
       ...acc,
@@ -146,20 +185,25 @@ export async function getFavoriteStatus(remixIds: string[]) {
 export async function getUserVotes(remixIds: string[]) {
   if (!remixIds.length) return {}
 
-  const supabase = await createClient()
-
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (userError || !user) {
+      console.error("Authentication error:", userError)
       return {}
     }
 
-    const { data } = await supabase
+    const { data, error: votesError } = await supabase
       .from('user_votes')
       .select('remix_id, vote_type')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .in('remix_id', remixIds)
+
+    if (votesError) {
+      console.error("Error fetching votes:", votesError)
+      return {}
+    }
 
     return data?.reduce((acc, vote) => ({
       ...acc,

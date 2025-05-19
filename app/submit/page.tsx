@@ -11,6 +11,7 @@ export default async function SubmitPage({
   searchParams: { edit?: string }
 }) {
   const supabase = await createClient()
+  const editId = searchParams?.edit
   
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -19,11 +20,11 @@ export default async function SubmitPage({
   }
 
   // If editing, verify the user owns the remix
-  if (searchParams.edit) {
+  if (editId) {
     const { data: remix } = await supabase
       .from('remixes')
       .select('user_id')
-      .eq('id', searchParams.edit)
+      .eq('id', editId)
       .single()
 
     if (!remix || remix.user_id !== session.user.id) {
@@ -37,12 +38,12 @@ export default async function SubmitPage({
       <main className="min-h-screen bg-[#FFF8F0] py-8">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold text-[#004E89] mb-6">
-            {searchParams.edit ? "Edit Game Remix" : "Submit a Game Remix"}
+            {editId ? "Edit Game Remix" : "Submit a Game Remix"}
           </h1>
           <div className="bg-white rounded-lg shadow-md p-6">
             <SubmitRemixForm 
               userId={session.user.id} 
-              remixId={searchParams.edit}
+              remixId={editId}
             />
           </div>
         </div>

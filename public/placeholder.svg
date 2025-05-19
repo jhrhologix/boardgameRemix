@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
-  <rect width="500" height="300" fill="#F3F4F6"/>
-  <rect x="150" y="75" width="200" height="150" rx="10" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="4"/>
-  <circle cx="250" cy="150" r="40" fill="#9CA3AF"/>
-  <rect x="220" y="130" width="60" height="40" fill="#F3F4F6" rx="5"/>
-  <text x="250" y="220" text-anchor="middle" font-family="system-ui" font-size="16" fill="#6B7280">No Image Available</text>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="100" fill="#FF6B35"/>
+    <circle cx="100" cy="80" r="40" fill="#FFFFFF"/>
+    <path d="M100,130 C60,130 25,160 25,200 L175,200 C175,160 140,130 100,130" fill="#FFFFFF"/>
 </svg>

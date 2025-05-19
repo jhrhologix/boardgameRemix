@@ -1,3 +1,5 @@
+"use client"
+
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import VoteButtons from "./vote-buttons"
@@ -5,6 +7,7 @@ import FavoriteButton from "./favorite-button"
 import HashtagDisplay from "./hashtag-display"
 import Link from "next/link"
 import RemixCompositeImage from "./remix-composite-image"
+import { User } from "lucide-react"
 
 export interface GameCardProps {
   id: string
@@ -24,96 +27,81 @@ export interface GameCardProps {
   isFavorited?: boolean
   isAuthenticated?: boolean
   hashtags?: string[]
+  user_id: string
+  creator_username: string
 }
 
 export default function GameCard({
   id,
   title,
   description,
-  games = [],
-  tags = [],
+  games,
+  tags,
   difficulty,
-  upvotes = 0,
-  downvotes = 0,
+  upvotes,
+  downvotes,
   userVote,
-  isFavorited = false,
-  isAuthenticated = false,
-  hashtags = [],
+  isFavorited,
+  isAuthenticated,
+  hashtags,
+  creator_username
 }: GameCardProps) {
-  // Ensure all data is properly typed
-  const safeProps = {
-    id: String(id),
-    title: String(title),
-    description: String(description),
-    difficulty: String(difficulty) as "Easy" | "Medium" | "Hard",
-    upvotes: Number(upvotes) || 0,
-    downvotes: Number(downvotes) || 0,
-    userVote: userVote ? String(userVote) : undefined,
-    isFavorited: Boolean(isFavorited),
-    isAuthenticated: Boolean(isAuthenticated),
-  }
-
-  // Filter out any invalid games and ensure proper typing
-  const validGames = games
-    .filter(game => game && game.name)
-    .map(game => ({
-      name: String(game.name),
-      id: String(game.id),
-      bggUrl: String(game.bggUrl),
-      image: String(game.image),
-    }))
-
-  // Ensure tags and hashtags are strings
-  const safeTags = tags.map(tag => String(tag))
-  const safeHashtags = hashtags.map(tag => String(tag))
+  const difficultyColor = {
+    Easy: "bg-green-500",
+    Medium: "bg-yellow-500",
+    Hard: "bg-red-500"
+  }[difficulty]
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg h-full flex flex-col">
-      <div className="relative h-48 overflow-hidden">
-        <RemixCompositeImage
-          games={validGames.map(game => ({
-            name: game.name
-          }))}
-          difficulty={safeProps.difficulty}
-          tags={safeHashtags}
-          isClickable={true}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-        />
-        <div className="absolute top-2 left-2 flex items-center gap-1">
-          <VoteButtons
-            remixId={safeProps.id}
-            upvotes={safeProps.upvotes}
-            downvotes={safeProps.downvotes}
-            userVote={safeProps.userVote}
-            isAuthenticated={safeProps.isAuthenticated}
-            className="bg-white/90 rounded-full px-1 shadow-sm"
-          />
-        </div>
-      </div>
-      <CardHeader className="pb-2 flex flex-row justify-between items-start">
-        <h3 className="text-xl font-bold text-[#004E89]">
-          <Link href={`/remixes/${safeProps.id}`} className="hover:text-[#FF6B35] hover:underline">
-            {safeProps.title}
-          </Link>
-        </h3>
-        <FavoriteButton 
-          remixId={safeProps.id} 
-          isFavorited={safeProps.isFavorited} 
-          isAuthenticated={safeProps.isAuthenticated} 
-        />
+    <Card className="bg-black border border-[#004E89]/20 hover:border-[#004E89]/40 transition-colors overflow-hidden">
+      <CardHeader className="p-0">
+        <Link href={`/remixes/${id}`}>
+          <RemixCompositeImage games={games} />
+        </Link>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-gray-600 mb-4 line-clamp-2">{safeProps.description}</p>
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <Link href={`/remixes/${id}`} className="hover:text-[#FF6B35] transition-colors">
+            <h3 className="font-bold text-lg mb-2">{title}</h3>
+          </Link>
+          <p className="text-sm text-gray-400 line-clamp-2">{description}</p>
+        </div>
         <div className="flex flex-wrap gap-2">
-          {safeTags.map((tag, index) => (
-            <Badge key={index} variant="secondary">
-              {tag}
-            </Badge>
+          {tags.map((tag) => (
+            <Link key={tag} href={`/browse?game=${tag}`}>
+              <Badge variant="outline" className="hover:bg-[#004E89]/20 transition-colors">
+                {tag}
+              </Badge>
+            </Link>
           ))}
         </div>
+        {hashtags && hashtags.length > 0 && (
+          <HashtagDisplay hashtags={hashtags} />
+        )}
+        <div className="flex items-center justify-between">
+          <Badge className={`${difficultyColor} text-black`}>
+            {difficulty}
+          </Badge>
+          <div className="flex items-center text-sm text-gray-400">
+            <User className="w-4 h-4 mr-1" />
+            <span>{creator_username}</span>
+          </div>
+        </div>
       </CardContent>
-      <CardFooter>
-        <HashtagDisplay hashtags={safeHashtags} />
+      <CardFooter className="p-4 pt-0 flex justify-between items-center">
+        <VoteButtons
+          remixId={id}
+          upvotes={upvotes}
+          downvotes={downvotes}
+          userVote={userVote}
+          isAuthenticated={isAuthenticated || false}
+          className="scale-90"
+        />
+        <FavoriteButton
+          remixId={id}
+          isFavorited={isFavorited}
+          isAuthenticated={isAuthenticated}
+        />
       </CardFooter>
     </Card>
   )

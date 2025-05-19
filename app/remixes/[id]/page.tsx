@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
@@ -23,19 +22,35 @@ interface HashtagRelation {
   }
 }
 
+// Add generateMetadata function to handle params properly
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const id = params.id
+  return {
+    title: `Remix Details - ${id}`,
+  }
+}
+
 export default async function RemixDetailPage({
   params,
 }: {
   params: { id: string }
 }) {
+  const supabase = await createClient()
+
   try {
-    const supabase = await createClient()
+    // Get the ID from params
+    const remixId = params.id
+
+    if (!remixId) {
+      notFound()
+    }
 
     // Fetch remix data
     const { data: remixData, error: remixError } = await supabase
       .from('remixes')
       .select(`
         *,
+        creator:profiles!user_id(username),
         games:remix_games (
           game:bgg_game_id (
             bgg_id,
@@ -50,7 +65,7 @@ export default async function RemixDetailPage({
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', remixId)
       .single()
 
     if (remixError) throw remixError
@@ -66,6 +81,7 @@ export default async function RemixDetailPage({
       upvotes: Number(remixData.upvotes) || 0,
       downvotes: Number(remixData.downvotes) || 0,
       user_id: String(remixData.user_id),
+      creator_username: remixData.creator?.username || 'Unknown User',
       created_at: String(remixData.created_at),
       duration: Number(remixData.duration) || 30, // Default to 30 minutes if not set
       games: (remixData.games || []).map((gameRel: GameRelation) => ({

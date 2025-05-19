@@ -37,8 +37,16 @@ export default function UserMenu({ user }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger className="focus:outline-none">
         <Avatar>
-          <AvatarImage src={user.user_metadata?.avatar_url || "/placeholder.svg"} />
-          <AvatarFallback className="bg-[#FF6B35] text-white">{getInitials()}</AvatarFallback>
+          {user.user_metadata?.avatar_url ? (
+            <AvatarImage 
+              src={user.user_metadata.avatar_url} 
+              alt={`${user.email}'s avatar`}
+            />
+          ) : (
+            <AvatarFallback className="bg-[#FF6B35] text-white">
+              {getInitials()}
+            </AvatarFallback>
+          )}
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-black border border-[#333]">

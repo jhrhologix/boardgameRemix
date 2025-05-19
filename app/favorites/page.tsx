@@ -1,80 +1,204 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Database } from '@/lib/database.types'
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
+import GameCard from "@/components/game-card"
+import { useToast } from "@/components/ui/use-toast"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import GameCard from "@/components/game-card"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { getUserVotes } from "@/lib/actions"
 
-export default async function FavoritesPage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+interface FavoriteRemix {
+  id: string
+  title: string
+  description: string
+  difficulty: "Easy" | "Medium" | "Hard"
+  upvotes: number
+  downvotes: number
+  user_id: string
+  games: Array<{
+    name: string
+    id: string
+    bggUrl: string
+    image: string
+  }>
+  tags: string[]
+  hashtags: string[]
+}
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+interface SupabaseRemix {
+  remix_id: string
+  remix: {
+    id: string
+    title: string
+    description: string
+    difficulty: string
+    user_id: string
+    upvotes: number
+    downvotes: number
+    bgg_games: Array<{
+      game: {
+        name: string
+        bgg_id: string
+        image_url: string | null
+        bgg_url: string | null
+      }
+    }>
+    remix_hashtags: Array<{
+      hashtag_id: {
+        name: string
+      }
+    }>
+  }
+}
 
-  if (!session) {
-    redirect("/auth/login?callbackUrl=/favorites")
+export default function FavoritesPage() {
+  const [favorites, setFavorites] = useState<FavoriteRemix[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClientComponentClient<Database>()
+  const router = useRouter()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !user) {
+          router.push('/auth?callbackUrl=/favorites')
+          return
+        }
+
+        const { data, error: fetchError } = await supabase
+          .from('favorites')
+          .select(`
+            remix_id,
+            remix:remixes (
+              id,
+              title,
+              description,
+              difficulty,
+              user_id,
+              upvotes,
+              downvotes,
+              bgg_games:remix_games!inner (
+                game:bgg_game_id (
+                  name,
+                  bgg_id,
+                  image_url,
+                  bgg_url
+                )
+              ),
+              remix_hashtags (
+                hashtag_id (
+                  name
+                )
+              )
+            )
+          `)
+          .eq('user_id', user.id)
+
+        if (fetchError) {
+          toast({
+            title: "Error",
+            description: "Failed to load favorites. Please try again.",
+            variant: "destructive"
+          })
+          throw fetchError
+        }
+
+        const typedData = data as unknown as SupabaseRemix[]
+        const remixes = typedData?.map(item => ({
+          id: item.remix.id,
+          title: item.remix.title,
+          description: item.remix.description,
+          difficulty: item.remix.difficulty.charAt(0).toUpperCase() + item.remix.difficulty.slice(1) as "Easy" | "Medium" | "Hard",
+          upvotes: item.remix.upvotes || 0,
+          downvotes: item.remix.downvotes || 0,
+          user_id: item.remix.user_id,
+          games: item.remix.bgg_games.map(g => ({
+            name: g.game.name,
+            id: g.game.bgg_id,
+            bggUrl: g.game.bgg_url || `https://boardgamegeek.com/boardgame/${g.game.bgg_id}/${g.game.name.toLowerCase().replace(/\s+/g, '-')}`,
+            image: g.game.image_url || "/placeholder.svg"
+          })),
+          tags: item.remix.bgg_games.map(g => g.game.name),
+          hashtags: item.remix.remix_hashtags
+            .filter(h => h && h.hashtag_id)
+            .map(h => h.hashtag_id.name)
+        })) || []
+
+        setFavorites(remixes)
+      } catch (err) {
+        console.error('Error fetching favorites:', err)
+        setError('Failed to load favorites')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchFavorites()
+  }, [supabase, router, toast])
+
+  if (isLoading) {
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#FF6B35]" />
+        </div>
+        <Footer />
+      </>
+    )
   }
 
-  // This would normally be a database query to get the user's favorites
-  // For demo purposes, we'll use mock data
-  const favoriteGames = [
-    {
-      id: "1",
-      title: "Tactical Tower: Chess + Jenga",
-      description:
-        "A strategic game where each Jenga piece represents a chess piece. Remove pieces strategically without compromising your position.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Chess", "Jenga"],
-      difficulty: "Medium" as const,
-      upvotes: 124,
-      downvotes: 12,
-    },
-    {
-      id: "3",
-      title: "Risk & Reward: Risk + Poker",
-      description:
-        "Combine territory control with poker hands to determine battle outcomes in this game of chance and strategy.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Risk", "Playing Cards"],
-      difficulty: "Hard" as const,
-      upvotes: 56,
-      downvotes: 23,
-    },
-  ]
-
-  // Get user votes
-  const remixIds = favoriteGames.map((game) => game.id)
-  const userVotes = await getUserVotes(remixIds)
+  if (error) {
+    return (
+      <>
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center text-red-500">
+            <p>{error}</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#FFF8F0] py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-[#004E89] mb-6">My Favorite Remixes</h1>
-
-          {favoriteGames.length === 0 ? (
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-medium text-gray-700 mb-4">You haven't saved any favorites yet</h2>
-              <p className="text-gray-600 mb-6">
-                Browse remixes and click the heart icon to save them to your favorites.
-              </p>
-              <a href="/browse" className="text-[#FF6B35] font-medium hover:underline">
-                Browse Remixes →
-              </a>
+      <div className="min-h-screen bg-black">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#FF6B35] mb-4">My Favorites</h1>
+            <p className="text-gray-300 max-w-2xl mx-auto">
+              Your collection of favorite game remixes. Check back often for new additions from the community.
+            </p>
+          </div>
+          
+          {favorites.length === 0 ? (
+            <div className="text-center text-gray-500">
+              <p>You haven't favorited any remixes yet.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {favoriteGames.map((game) => (
-                <GameCard key={game.id} {...game} userVote={userVotes?.[game.id]} isFavorited={true} />
+              {favorites.map((remix) => (
+                <GameCard
+                  key={remix.id}
+                  {...remix}
+                  isAuthenticated={true}
+                  isFavorited={true}
+                />
               ))}
             </div>
           )}
         </div>
-      </main>
+      </div>
       <Footer />
     </>
   )
