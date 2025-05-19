@@ -12,6 +12,7 @@ import { Hash } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import type { BGGGame } from "@/lib/bgg-api"
+import BrowseFilters from "@/components/browse-filters"
 
 interface Game {
   name: string
@@ -94,23 +95,63 @@ interface FavoriteStatus {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: { sort?: string; q?: string; game?: string; hashtag?: string }
+  searchParams: { 
+    sort?: string; 
+    q?: string; 
+    game?: string; 
+    hashtag?: string;
+    creator?: string;
+    games?: string;
+    tags?: string;
+    difficulty?: string;
+    minPlayers?: string;
+    maxPlayers?: string;
+  }
 }) {
   const supabase = await createClient()
 
-  // Get search params directly
-  const gameFilter = searchParams.game
-  const hashtagFilter = searchParams.hashtag
-  const sortFilter = searchParams.sort
-  const searchQuery = searchParams.q
+  // Get search params directly - properly awaited
+  const params = await Promise.resolve(searchParams)
+  const gameFilter = params.game
+  const hashtagFilter = params.hashtag
+  const sortFilter = params.sort
+  const searchQuery = params.q
+  const creatorFilter = params.creator
+  const gamesFilter = params.games?.split(',') || []
+  const tagsFilter = params.tags?.split(',') || []
+  const difficultyFilter = params.difficulty
+  const minPlayersFilter = params.minPlayers ? parseInt(params.minPlayers) : undefined
+  const maxPlayersFilter = params.maxPlayers ? parseInt(params.maxPlayers) : undefined
 
   let isAuthenticated = false
   let remixes: Remix[] = []
+  let allGames: { id: string; name: string }[] = []
+  let allTags: string[] = []
 
   try {
     // Get authentication status using getUser
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     isAuthenticated = !!user
+
+    // Fetch all games for the filter
+    const { data: gamesData } = await supabase
+      .from('bgg_games')
+      .select('bgg_id, name')
+      .order('name')
+
+    if (gamesData) {
+      allGames = gamesData.map(g => ({ id: g.bgg_id, name: g.name }))
+    }
+
+    // Fetch all hashtags for the filter
+    const { data: tagsData } = await supabase
+      .from('hashtags')
+      .select('name')
+      .order('name')
+
+    if (tagsData) {
+      allTags = tagsData.map(t => t.name)
+    }
 
     let query = supabase
       .from('remixes')
@@ -122,7 +163,9 @@ export default async function BrowsePage({
             bgg_id,
             name,
             image_url,
-            bgg_url
+            bgg_url,
+            min_players,
+            max_players
           )
         ),
         remix_hashtags(
@@ -134,13 +177,35 @@ export default async function BrowsePage({
 
     // Apply filters
     if (gameFilter) {
-      // Use ilike for case-insensitive game name search
       query = query.filter('remix_games.game.name', 'ilike', `%${gameFilter}%`)
     }
 
     if (hashtagFilter) {
-      // Use ilike for case-insensitive hashtag search
       query = query.filter('remix_hashtags.hashtag.name', 'ilike', `%${hashtagFilter}%`)
+    }
+
+    if (creatorFilter) {
+      query = query.filter('creator.username', 'ilike', `%${creatorFilter}%`)
+    }
+
+    if (gamesFilter && gamesFilter.length > 0 && gamesFilter[0] !== '') {
+      query = query.filter('remix_games.game.name', 'overlaps', gamesFilter)
+    }
+
+    if (tagsFilter && tagsFilter.length > 0 && tagsFilter[0] !== '') {
+      query = query.filter('remix_hashtags.hashtag.name', 'overlaps', tagsFilter)
+    }
+
+    if (difficultyFilter && difficultyFilter !== 'any') {
+      query = query.filter('difficulty', 'eq', difficultyFilter.toLowerCase())
+    }
+
+    if (minPlayersFilter) {
+      query = query.filter('remix_games.game.min_players', 'gte', minPlayersFilter)
+    }
+
+    if (maxPlayersFilter) {
+      query = query.filter('remix_games.game.max_players', 'lte', maxPlayersFilter)
     }
 
     // Apply sorting
@@ -155,15 +220,15 @@ export default async function BrowsePage({
         query = query.order('upvotes', { ascending: false })
         break
       case 'controversial':
-        query = query.order('controversy_score', { ascending: false })
+        query = query.order('downvotes', { ascending: false })
         break
       default:
-        query = query.order('popularity_score', { ascending: false })
+        // Default to newest
+        query = query.order('created_at', { ascending: false })
     }
 
     // Apply search query if present
     if (searchQuery) {
-      // Use ilike for case-insensitive title search
       query = query.filter('title', 'ilike', `%${searchQuery}%`)
     }
 
@@ -240,21 +305,39 @@ export default async function BrowsePage({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {remixes.map((remix) => (
-                <GameCard
-                  key={remix.id}
-                  {...remix}
-                  userVote={userVotes[remix.id]}
-                  isFavorited={favoriteStatus[remix.id]}
-                  isAuthenticated={isAuthenticated}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-1">
+                <BrowseFilters
+                  allGames={allGames}
+                  allTags={allTags}
+                  initialFilters={{
+                    creator: creatorFilter,
+                    games: gamesFilter,
+                    tags: tagsFilter,
+                    difficulty: difficultyFilter,
+                    minPlayers: minPlayersFilter,
+                    maxPlayers: maxPlayersFilter
+                  }}
                 />
-              ))}
-              {remixes.length === 0 && (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-gray-500">No remixes found.</p>
+              </div>
+              <div className="lg:col-span-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {remixes.map((remix) => (
+                    <GameCard
+                      key={remix.id}
+                      {...remix}
+                      userVote={userVotes[remix.id]}
+                      isFavorited={favoriteStatus[remix.id]}
+                      isAuthenticated={isAuthenticated}
+                    />
+                  ))}
+                  {remixes.length === 0 && (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-gray-500">No remixes found.</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

@@ -148,7 +148,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <User size={16} />
-                  <Link href={`/profile/${remix.user_id}`} className="hover:text-[#FF6B35] transition-colors">
+                  <Link href={`/browse?creator=${remix.creator_username}`} className="hover:text-[#FF6B35] transition-colors">
                     {remix.creator_username}
                   </Link>
                 </div>

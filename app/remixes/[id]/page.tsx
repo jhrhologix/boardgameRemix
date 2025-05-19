@@ -24,9 +24,8 @@ interface HashtagRelation {
 
 // Add generateMetadata function to handle params properly
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const id = params.id
   return {
-    title: `Remix Details - ${id}`,
+    title: `Remix Details - ${params.id}`,
   }
 }
 
