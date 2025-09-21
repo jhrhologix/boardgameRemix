@@ -279,3 +279,14 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
     throw error
   }
 }
+
+// LEGAL BGG API: Use BGG's official API to fetch images
+export function getLegalBGGImageUrl(gameId: string): string {
+  // If we have a BGG ID, use our legal API route
+  if (gameId && gameId !== 'placeholder') {
+    return `/api/bgg-image?gameId=${gameId}`
+  }
+  
+  // Fallback to placeholder for games without BGG IDs
+  return '/placeholder.svg'
+}

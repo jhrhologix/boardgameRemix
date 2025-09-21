@@ -76,6 +76,33 @@ export default function Footer() {
 
         <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
           <p>© {new Date().getFullYear()} Remix Games. All rights reserved.</p>
+          
+          {/* BGG Terms of Use Compliance */}
+          <div className="mt-4 flex flex-col items-center space-y-2">
+            <a 
+              href="https://boardgamegeek.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-block"
+            >
+              {/* Powered by BGG Logo - Required by BGG Terms of Use */}
+              <div className="bg-white rounded px-3 py-2 text-black text-sm font-semibold hover:bg-gray-100 transition-colors">
+                🎲 Powered by BoardGameGeek
+              </div>
+            </a>
+            <p className="text-xs">
+              Game data and images provided by BoardGameGeek under their{' '}
+              <a 
+                href="https://boardgamegeek.com/wiki/page/XML_API_Terms_of_Use" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
+              >
+                XML API Terms of Use
+              </a>
+              . Used for non-commercial purposes.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

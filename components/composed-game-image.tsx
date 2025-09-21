@@ -8,6 +8,13 @@ interface ComposedGameImageProps {
   className?: string
 }
 
+// LEGAL: Use placeholder images for compliance
+function getLegalImageUrl(originalUrl: string | null, gameName: string) {
+  // For legal compliance, use placeholder images
+  // TODO: Implement proper local image storage with attribution
+  return '/placeholder.svg'
+}
+
 export default function ComposedGameImage({ games, className = "" }: ComposedGameImageProps) {
   // Filter out games without valid image URLs
   const gamesWithImages = games?.filter(game => game && game.image_url) || []
@@ -31,7 +38,7 @@ export default function ComposedGameImage({ games, className = "" }: ComposedGam
       {gamesWithImages.length === 1 ? (
         // Single game - show full image
         <Image
-          src={gamesWithImages[0].image_url || "/placeholder.svg"}
+          src={getLegalImageUrl(gamesWithImages[0].image_url, gamesWithImages[0].name)}
           alt={gamesWithImages[0].name}
           fill
           className="object-contain"
@@ -47,7 +54,7 @@ export default function ComposedGameImage({ games, className = "" }: ComposedGam
           {gamesWithImages.slice(0, 4).map((game, index) => (
             <div key={index} className="relative overflow-hidden border border-gray-100">
               <Image
-                src={game.image_url || "/placeholder.svg"}
+                src={getLegalImageUrl(game.image_url, game.name)}
                 alt={game.name}
                 fill
                 className="object-contain p-2"

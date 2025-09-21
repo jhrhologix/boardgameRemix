@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from '@/lib/database.types'
+import { useAuth } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import GameCard from "@/components/game-card"
@@ -55,22 +55,21 @@ interface SupabaseRemix {
 }
 
 export default function FavoritesPage() {
+  const { user } = useAuth()
   const [favorites, setFavorites] = useState<FavoriteRemix[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClientComponentClient<Database>()
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
     const fetchFavorites = async () => {
+      if (!user) {
+        router.push('/auth?callbackUrl=/favorites')
+        return
+      }
+
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
-        if (authError || !user) {
-          router.push('/auth?callbackUrl=/favorites')
-          return
-        }
 
         const { data, error: fetchError } = await supabase
           .from('favorites')
@@ -141,7 +140,7 @@ export default function FavoritesPage() {
     }
 
     fetchFavorites()
-  }, [supabase, router, toast])
+  }, [user, router, toast])
 
   if (isLoading) {
     return (

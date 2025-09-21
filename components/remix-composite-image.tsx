@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 
 interface Game {
   name: string
@@ -208,10 +209,15 @@ function getGameDisplayText(name: string): string {
   return firstWord.slice(0, 3) + '.'
 }
 
-// Function to convert original image URL to thumbnail
-function getThumbnailUrl(originalUrl: string) {
-  if (!originalUrl || originalUrl === '/placeholder.svg') return '/placeholder.svg'
-  return originalUrl.replace('/original/', '/thumb/').replace('/0x0/', '/200x200/')
+// LEGAL BGG API: Use BGG's official API to fetch images
+function getLegalBGGImageUrl(game: Game): string {
+  // If we have a BGG ID, use our legal API route
+  if (game.id && game.id !== 'placeholder') {
+    return `/api/bgg-image?gameId=${game.id}`
+  }
+  
+  // Fallback to placeholder for games without BGG IDs
+  return '/placeholder.svg'
 }
 
 export default function RemixCompositeImage({ 
@@ -221,26 +227,89 @@ export default function RemixCompositeImage({
   tags = [],
   isClickable = true
 }: RemixCompositeImageProps) {
-  // Calculate grid columns based on number of games
-  const cols = games.length > 1 ? 2 : 1
-  const rows = Math.ceil(games.length / cols)
-
-  return (
-    <div className={`grid grid-cols-${cols} gap-2 aspect-[4/3] bg-black rounded-lg p-2 ${className}`}>
-      {games.map((game, index) => (
-        <div 
-          key={index} 
-          className="relative flex items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-md p-3"
-        >
-          <div className="text-center">
-            <span className="text-white text-sm sm:text-base font-medium line-clamp-2">
-              {game.name}
-            </span>
+  // Check if we have games with BGG IDs that could have images
+  const gamesWithPotentialImages = games.filter(game => game.id && game.id !== 'placeholder')
+  
+  // If no games have BGG IDs, show text-based version
+  if (gamesWithPotentialImages.length === 0) {
+    const cols = games.length > 1 ? 2 : 1
+    return (
+      <div className={`grid grid-cols-${cols} gap-2 aspect-[4/3] bg-black rounded-lg p-2 ${className}`}>
+        {games.map((game, index) => (
+          <div 
+            key={index} 
+            className="relative flex items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-md p-3"
+          >
+            <div className="text-center">
+              <span className="text-white text-sm sm:text-base font-medium line-clamp-2">
+                {game.name}
+              </span>
+            </div>
           </div>
+        ))}
+        {difficulty && (
+          <div className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium" style={{
+            backgroundColor: getDifficultyColor(difficulty),
+            color: 'white'
+          }}>
+            {difficulty}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Show actual game images or placeholders
+  return (
+    <div className={`relative aspect-[4/3] bg-black rounded-lg overflow-hidden ${className}`}>
+      {gamesWithPotentialImages.length === 1 ? (
+        // Single game - show full image
+        <Image
+          src={getLegalBGGImageUrl(gamesWithPotentialImages[0])}
+          alt={gamesWithPotentialImages[0].name}
+          fill
+          className="object-contain p-2"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          priority
+          onError={(e) => {
+            // Fallback to placeholder on error
+            e.currentTarget.src = '/placeholder.svg'
+          }}
+        />
+      ) : (
+        // Multiple games - show grid
+        <div className="grid h-full w-full gap-1 p-2" 
+          style={{ 
+            gridTemplateColumns: gamesWithPotentialImages.length > 2 ? "1fr 1fr" : "repeat(2, 1fr)",
+            gridTemplateRows: gamesWithPotentialImages.length > 2 ? "1fr 1fr" : "1fr"
+          }}
+        >
+          {gamesWithPotentialImages.slice(0, 4).map((game, index) => (
+            <div key={index} className="relative overflow-hidden rounded-md bg-gray-800">
+              <Image
+                src={getLegalBGGImageUrl(game)}
+                alt={game.name}
+                fill
+                className="object-contain p-1"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
+                priority={index === 0}
+                onError={(e) => {
+                  // Fallback to placeholder on error
+                  e.currentTarget.src = '/placeholder.svg'
+                }}
+              />
+              {/* Game name overlay for multiple games */}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate">
+                {getGameDisplayText(game.name)}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+      
+      {/* Difficulty badge */}
       {difficulty && (
-        <div className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium" style={{
+        <div className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium z-10" style={{
           backgroundColor: getDifficultyColor(difficulty),
           color: 'white'
         }}>

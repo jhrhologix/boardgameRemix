@@ -10,13 +10,17 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
+      // Allow our own API routes for BGG images
       {
-        protocol: 'https',
-        hostname: 'cf.geekdo-images.com',
-        pathname: '/**',
-      }
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/api/bgg-image/**',
+      },
     ],
-    unoptimized: true
+    unoptimized: false, // Enable optimization for our API images
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   webpack(config) {
     config.module.rules.push({

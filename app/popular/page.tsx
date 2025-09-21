@@ -4,103 +4,115 @@ import GameCard from "@/components/game-card"
 import SortOptions from "@/components/sort-options"
 import { getUserVotes, getFavoriteStatus } from "@/lib/actions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { createClient } from "@/lib/supabase/server"
 
-export default async function PopularPage({ searchParams }: { searchParams: { sort?: string } }) {
-  const sortBy = searchParams.sort || "popular"
+export default async function PopularPage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
+  const params = await searchParams
+  const sortBy = params.sort || "popular"
+  
+  const supabase = await createClient()
+  let isAuthenticated = false
+  let popularGames: any[] = []
 
-  // This would normally be a database query with sorting
-  // For demo purposes, we'll use mock data
-  const popularGames = [
-    {
-      id: "1",
-      title: "Tactical Tower: Chess + Jenga",
-      description:
-        "A strategic game where each Jenga piece represents a chess piece. Remove pieces strategically without compromising your position.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Chess", "Jenga"],
-      difficulty: "Medium" as const,
-      upvotes: 124,
-      downvotes: 12,
-    },
-    {
-      id: "4",
-      title: "Scrabble Quest: Scrabble + Catan",
-      description: "Build words to collect resources and expand your vocabulary empire across the board.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Scrabble", "Catan"],
-      difficulty: "Medium" as const,
-      upvotes: 142,
-      downvotes: 18,
-    },
-    {
-      id: "2",
-      title: "Monopoly Mayhem: Monopoly + Uno",
-      description: "Use Uno cards to determine movement and property actions in this fast-paced Monopoly variant.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Monopoly", "Uno"],
-      difficulty: "Easy" as const,
-      upvotes: 87,
-      downvotes: 5,
-    },
-    {
-      id: "8",
-      title: "Pandemic Poker: Pandemic + Poker",
-      description: "Use poker hands to determine your actions in fighting global diseases.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Pandemic", "Playing Cards"],
-      difficulty: "Hard" as const,
-      upvotes: 98,
-      downvotes: 14,
-    },
-    {
-      id: "9",
-      title: "Dominion Dice: Dominion + Yahtzee",
-      description: "Roll dice to determine which cards you can buy in this deck-building game.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Dominion", "Yahtzee"],
-      difficulty: "Medium" as const,
-      upvotes: 76,
-      downvotes: 8,
-    },
-    {
-      id: "3",
-      title: "Risk & Reward: Risk + Poker",
-      description:
-        "Combine territory control with poker hands to determine battle outcomes in this game of chance and strategy.",
-      imageSrc: "/placeholder.svg?height=300&width=500",
-      tags: ["Risk", "Playing Cards"],
-      difficulty: "Hard" as const,
-      upvotes: 56,
-      downvotes: 23,
-    },
-  ]
+  try {
+    // Get authentication status
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    isAuthenticated = !!user
 
-  // Sort games based on the sort parameter
-  const sortedGames = [...popularGames].sort((a, b) => {
+    // Fetch real remixes from database sorted by popularity
+    let query = supabase
+      .from('remixes')
+      .select(`
+        *,
+        creator:profiles!user_id(username),
+        remix_games(
+          game:bgg_game_id(
+            bgg_id,
+            name,
+            image_url,
+            bgg_url
+          )
+        ),
+        remix_hashtags(
+          hashtag:hashtag_id(
+            name
+          )
+        )
+      `)
+
+    // Apply sorting based on sortBy parameter
     switch (sortBy) {
-      case "upvotes":
-        return b.upvotes - a.upvotes
-      case "controversial":
-        // Sort by most controversial (closest upvote/downvote ratio to 1:1)
-        const aRatio = Math.min(a.upvotes, a.downvotes) / Math.max(a.upvotes, a.downvotes)
-        const bRatio = Math.min(b.upvotes, b.downvotes) / Math.max(b.upvotes, b.downvotes)
-        return bRatio - aRatio
-      case "newest":
-        // In a real app, we'd sort by date
-        return 0
-      case "oldest":
-        // In a real app, we'd sort by date
-        return 0
-      case "popular":
-      default:
-        // Sort by net votes (upvotes - downvotes)
-        return b.upvotes - b.downvotes - (a.upvotes - a.downvotes)
+      case 'upvotes':
+        query = query.order('upvotes', { ascending: false })
+        break
+      case 'controversial':
+        query = query.order('downvotes', { ascending: false })
+        break
+      case 'newest':
+        query = query.order('created_at', { ascending: false })
+        break
+      default: // 'popular' - sort by upvotes minus downvotes
+        query = query.order('upvotes', { ascending: false })
     }
-  })
+
+    const { data: remixesData, error } = await query.limit(12) // Show top 12
+
+    if (error) {
+      console.error("Error fetching popular remixes:", error)
+      throw error
+    }
+
+    // Transform data to match expected format
+    popularGames = (remixesData || []).map(remix => {
+      const difficulty = remix.difficulty.charAt(0).toUpperCase() + remix.difficulty.slice(1).toLowerCase()
+      
+      return {
+        id: remix.id,
+        title: remix.title,
+        description: remix.description,
+        difficulty: difficulty as "Easy" | "Medium" | "Hard",
+        upvotes: remix.upvotes || 0,
+        downvotes: remix.downvotes || 0,
+        user_id: remix.user_id,
+        creator_username: (remix.creator as any)?.username || 'Unknown User',
+        created_at: remix.created_at,
+        games: (remix.remix_games as any[])
+          .filter((g) => g && g.game && g.game.name)
+          .map((g) => ({
+            name: g.game.name,
+            id: g.game.bgg_id,
+            bggUrl: g.game.bgg_url || `https://boardgamegeek.com/boardgame/${g.game.bgg_id}`,
+            image: g.game.image_url || "/placeholder.svg"
+          })),
+        tags: (remix.remix_games as any[])
+          .filter((g) => g && g.game && g.game.name)
+          .map((g) => g.game.name),
+        hashtags: (remix.remix_hashtags as any[])
+          .filter((h) => h && h.hashtag)
+          .map((h) => h.hashtag.name)
+      }
+    })
+
+  } catch (error) {
+    console.error("Error in PopularPage:", error)
+    popularGames = []
+  }
 
   // Get user votes and favorite status
-  const remixIds = sortedGames.map((game) => game.id)
-  const [userVotes, favoriteStatus] = await Promise.all([getUserVotes(remixIds), getFavoriteStatus(remixIds)])
+  const remixIds = popularGames.map(remix => remix.id)
+  let userVotes: any = {}
+  let favoriteStatus: any = {}
+
+  try {
+    [userVotes, favoriteStatus] = await Promise.all([
+      getUserVotes(remixIds),
+      getFavoriteStatus(remixIds)
+    ])
+  } catch (error) {
+    console.error("Error getting user votes or favorites:", error)
+  }
+
+  // Sorting is handled in the database query above
 
   return (
     <>
@@ -122,19 +134,20 @@ export default async function PopularPage({ searchParams }: { searchParams: { so
             </TabsList>
             <TabsContent value="all" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedGames.map((game) => (
+                {popularGames.map((remix) => (
                   <GameCard
-                    key={game.id}
-                    {...game}
-                    userVote={userVotes?.[game.id]}
-                    isFavorited={favoriteStatus?.[game.id]}
+                    key={remix.id}
+                    {...remix}
+                    userVote={userVotes?.[remix.id]}
+                    isFavorited={favoriteStatus?.[remix.id]}
+                    isAuthenticated={isAuthenticated}
                   />
                 ))}
               </div>
             </TabsContent>
             <TabsContent value="strategy" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedGames
+                {popularGames
                   .filter((game) => game.tags.some((tag) => ["Chess", "Risk", "Catan"].includes(tag)))
                   .map((game) => (
                     <GameCard
@@ -148,7 +161,7 @@ export default async function PopularPage({ searchParams }: { searchParams: { so
             </TabsContent>
             <TabsContent value="family" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedGames
+                {popularGames
                   .filter((game) => game.tags.some((tag) => ["Monopoly", "Yahtzee", "Scrabble"].includes(tag)))
                   .map((game) => (
                     <GameCard
@@ -162,7 +175,7 @@ export default async function PopularPage({ searchParams }: { searchParams: { so
             </TabsContent>
             <TabsContent value="card" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedGames
+                {popularGames
                   .filter((game) => game.tags.some((tag) => ["Playing Cards", "Uno", "Dominion"].includes(tag)))
                   .map((game) => (
                     <GameCard
@@ -176,7 +189,7 @@ export default async function PopularPage({ searchParams }: { searchParams: { so
             </TabsContent>
             <TabsContent value="party" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedGames
+                {popularGames
                   .filter((game) => game.difficulty === "Easy")
                   .map((game) => (
                     <GameCard

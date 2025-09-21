@@ -4,18 +4,24 @@ import SubmitRemixForm from "@/components/submit-remix-form"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { generateSubmitMetadata } from "@/lib/seo"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = generateSubmitMetadata()
 
 export default async function SubmitPage({
   searchParams,
 }: {
-  searchParams: { edit?: string }
+  searchParams: Promise<{ edit?: string }>
 }) {
   const supabase = await createClient()
-  const editId = searchParams?.edit
+  const params = await searchParams
+  const editId = params?.edit
   
-  const { data: { session } } = await supabase.auth.getSession()
+  // Use getUser() for security as recommended by Supabase
+  const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (error || !user) {
     redirect("/auth?callbackUrl=/submit")
   }
 
@@ -27,7 +33,7 @@ export default async function SubmitPage({
       .eq('id', editId)
       .single()
 
-    if (!remix || remix.user_id !== session.user.id) {
+    if (!remix || remix.user_id !== user.id) {
       redirect('/my-remixes')
     }
   }
@@ -42,7 +48,7 @@ export default async function SubmitPage({
           </h1>
           <div className="bg-white rounded-lg shadow-md p-6">
             <SubmitRemixForm 
-              userId={session.user.id} 
+              userId={user.id} 
               remixId={editId}
             />
           </div>

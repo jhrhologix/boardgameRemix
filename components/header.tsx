@@ -3,32 +3,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import UserMenu from "./user-menu"
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth"
 import TipJar from "./tip-jar"
-import { Session } from '@supabase/supabase-js'
-import type { Database } from '@/lib/database.types'
 
 export default function Header() {
-  const [session, setSession] = useState<Session | null>(null)
-  const supabase = createClient()
-
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession()
-      setSession(initialSession)
-    }
-    
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  const { user } = useAuth()
 
   return (
     <header className="bg-black border-b border-[#004E89]/20 sticky top-0 z-50">
@@ -47,7 +26,7 @@ export default function Header() {
             <Link href="/submit" className="text-gray-300 hover:text-[#FF6B35] transition-colors">
               Submit a Remix
             </Link>
-            {session && (
+            {user && (
               <Link href="/favorites" className="text-gray-300 hover:text-[#FF6B35] transition-colors flex items-center gap-1">
                 <span>My Favorites</span>
               </Link>
@@ -58,8 +37,8 @@ export default function Header() {
             <div className="hidden sm:block">
               <TipJar />
             </div>
-            {session ? (
-              <UserMenu user={session.user} />
+            {user ? (
+              <UserMenu user={user} />
             ) : (
               <Link href="/auth">
                 <Button variant="outline" className="hidden sm:inline-flex bg-black text-[#FF6B35] border-[#004E89]/20 hover:bg-[#004E89]/20 hover:text-[#FF6B35]">

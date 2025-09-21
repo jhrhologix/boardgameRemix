@@ -22,12 +22,35 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import CommentsSection from '@/components/comments-section'
+import SetupImagesDisplay from '@/components/setup-images-display'
+import { getLegalBGGImageUrl } from '@/lib/bgg-api'
+
+// Helper function to convert YouTube URL to embed URL
+function getYouTubeEmbedUrl(url: string): string {
+  if (!url) return ''
+  
+  // Handle different YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+  ]
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}`
+    }
+  }
+  
+  return url
+}
 
 interface RemixData {
   id: string
   title: string
   description: string
   rules: string
+  setup_instructions: string
   difficulty: string
   upvotes: number
   downvotes: number
@@ -35,6 +58,8 @@ interface RemixData {
   creator_username: string
   created_at: string
   duration: number
+  max_players?: number
+  youtube_url: string
   games: {
     game: {
       bgg_id: string
@@ -85,7 +110,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
 
           // Get user's vote
           const { data: voteData } = await supabase
-            .from('votes')
+            .from('user_votes')
             .select('value')
             .eq('user_id', user.id)
             .eq('remix_id', remix.id)
@@ -146,6 +171,12 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                   <Clock size={16} />
                   <span>{remix.duration} min</span>
                 </div>
+                {remix.max_players && (
+                  <div className="flex items-center gap-2">
+                    <User size={16} />
+                    <span>Up to {remix.max_players} players</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <User size={16} />
                   <Link href={`/browse?creator=${remix.creator_username}`} className="hover:text-[#FF6B35] transition-colors">
@@ -249,6 +280,23 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         </div>
       </div>
 
+      {/* Setup Instructions section */}
+      {remix.setup_instructions && (
+        <div className="p-6 border-t border-[#333]">
+          <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Setup Instructions</h2>
+          <div className="prose prose-invert max-w-none">
+            {remix.setup_instructions.split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-4 text-gray-300">{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Setup Images section */}
+      <div className="p-6 border-t border-[#333]">
+        <SetupImagesDisplay remixId={remix.id} />
+      </div>
+
       {/* Games section */}
       <div className="p-6 border-t border-[#333]">
         <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Required Games</h2>
@@ -261,13 +309,17 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 rel="noopener noreferrer"
                 className="block bg-[#2a2a2a] rounded-lg overflow-hidden hover:ring-2 hover:ring-[#FF6B35] transition-all"
               >
-                <div className="aspect-w-16 aspect-h-9 relative">
+                <div className="aspect-[16/9] relative h-48">
                   <Image
-                    src={gameRel.game.image_url || '/placeholder.svg'}
+                    src={getLegalBGGImageUrl(gameRel.game.bgg_id)}
                     alt={gameRel.game.name}
                     fill
                     className="object-contain"
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                    onError={(e) => {
+                      // Fallback to placeholder on error
+                      e.currentTarget.src = '/placeholder.svg'
+                    }}
                   />
                 </div>
                 <div className="p-4">
@@ -287,6 +339,22 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
           ))}
         </div>
       </div>
+
+      {/* YouTube Video section */}
+      {remix.youtube_url && (
+        <div className="p-6 border-t border-[#333]">
+          <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Video Tutorial</h2>
+          <div className="aspect-video w-full max-w-4xl mx-auto">
+            <iframe
+              src={getYouTubeEmbedUrl(remix.youtube_url)}
+              title={`${remix.title} - Video Tutorial`}
+              className="w-full h-full rounded-lg"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {/* Comments section */}
       <div className="p-6 border-t border-[#333]">

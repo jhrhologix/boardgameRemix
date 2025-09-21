@@ -49,8 +49,8 @@ export function SignUpForm({ callbackUrl }: SignUpFormProps) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl text-white">Create an account</CardTitle>
+        <CardDescription className="text-gray-300">
           Sign up to start creating and sharing game remixes
         </CardDescription>
       </CardHeader>
@@ -69,7 +69,7 @@ export function SignUpForm({ callbackUrl }: SignUpFormProps) {
             </Alert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <Input
               id="email"
               type="email"
@@ -78,11 +78,11 @@ export function SignUpForm({ callbackUrl }: SignUpFormProps) {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading || success}
-              className="bg-white"
+              className="bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-white">Password</Label>
             <Input
               id="password"
               type="password"
@@ -91,11 +91,11 @@ export function SignUpForm({ callbackUrl }: SignUpFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading || success}
-              className="bg-white"
+              className="bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -104,7 +104,7 @@ export function SignUpForm({ callbackUrl }: SignUpFormProps) {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={loading || success}
-              className="bg-white"
+              className="bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
             />
           </div>
         </CardContent>

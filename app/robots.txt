@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://remix.games/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /_next/
+Disallow: /profile/
+
+# Allow important pages
+Allow: /browse
+Allow: /popular
+Allow: /submit
+Allow: /remixes/

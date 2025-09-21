@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import type { BGGGame } from "@/lib/bgg-api"
 import BrowseFilters from "@/components/browse-filters"
+import { generateBrowseMetadata } from "@/lib/seo"
+import type { Metadata } from "next"
 
 interface Game {
   name: string
@@ -40,6 +42,31 @@ interface Remix {
   games: Game[]
   tags: string[]
   hashtags: string[]
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ 
+    sort?: string; 
+    q?: string; 
+    game?: string; 
+    hashtag?: string;
+    creator?: string;
+    games?: string;
+    tags?: string;
+    difficulty?: string;
+    minPlayers?: string;
+    maxPlayers?: string;
+  }>
+}): Promise<Metadata> {
+  const params = await searchParams
+  
+  return generateBrowseMetadata({
+    game: params.game,
+    hashtag: params.hashtag,
+    difficulty: params.difficulty
+  })
 }
 
 interface SupabaseGame {
@@ -95,7 +122,7 @@ interface FavoriteStatus {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: { 
+  searchParams: Promise<{ 
     sort?: string; 
     q?: string; 
     game?: string; 
@@ -106,12 +133,12 @@ export default async function BrowsePage({
     difficulty?: string;
     minPlayers?: string;
     maxPlayers?: string;
-  }
+  }>
 }) {
   const supabase = await createClient()
 
-  // Get search params directly - properly awaited
-  const params = await Promise.resolve(searchParams)
+  // Get search params properly awaited for Next.js 15
+  const params = await searchParams
   const gameFilter = params.game
   const hashtagFilter = params.hashtag
   const sortFilter = params.sort
@@ -133,14 +160,27 @@ export default async function BrowsePage({
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     isAuthenticated = !!user
 
-    // Fetch all games for the filter
+    // Fetch distinct games that are actually used in remixes
     const { data: gamesData } = await supabase
-      .from('bgg_games')
-      .select('bgg_id, name')
-      .order('name')
+      .from('remix_games')
+      .select(`
+        game:bgg_game_id(
+          bgg_id,
+          name
+        )
+      `)
 
     if (gamesData) {
-      allGames = gamesData.map(g => ({ id: g.bgg_id, name: g.name }))
+      // Remove duplicates and null values, then sort
+      const uniqueGames = gamesData
+        .filter(rg => rg.game && (rg.game as any).name)
+        .map(rg => ({ id: (rg.game as any).bgg_id, name: (rg.game as any).name }))
+        .filter((game, index, self) => 
+          index === self.findIndex(g => g.name === game.name)
+        )
+        .sort((a, b) => a.name.localeCompare(b.name))
+      
+      allGames = uniqueGames
     }
 
     // Fetch all hashtags for the filter
@@ -158,7 +198,7 @@ export default async function BrowsePage({
       .select(`
         *,
         creator:profiles!user_id(username),
-        remix_games!inner(
+        remix_games(
           game:bgg_game_id(
             bgg_id,
             name,
@@ -175,38 +215,23 @@ export default async function BrowsePage({
         )
       `)
 
-    // Apply filters
-    if (gameFilter) {
-      query = query.filter('remix_games.game.name', 'ilike', `%${gameFilter}%`)
-    }
-
-    if (hashtagFilter) {
-      query = query.filter('remix_hashtags.hashtag.name', 'ilike', `%${hashtagFilter}%`)
-    }
-
+    // Apply only non-relationship filters to preserve game data
     if (creatorFilter) {
       query = query.filter('creator.username', 'ilike', `%${creatorFilter}%`)
-    }
-
-    if (gamesFilter && gamesFilter.length > 0 && gamesFilter[0] !== '') {
-      query = query.filter('remix_games.game.name', 'overlaps', gamesFilter)
-    }
-
-    if (tagsFilter && tagsFilter.length > 0 && tagsFilter[0] !== '') {
-      query = query.filter('remix_hashtags.hashtag.name', 'overlaps', tagsFilter)
     }
 
     if (difficultyFilter && difficultyFilter !== 'any') {
       query = query.filter('difficulty', 'eq', difficultyFilter.toLowerCase())
     }
 
-    if (minPlayersFilter) {
-      query = query.filter('remix_games.game.min_players', 'gte', minPlayersFilter)
-    }
-
-    if (maxPlayersFilter) {
-      query = query.filter('remix_games.game.max_players', 'lte', maxPlayersFilter)
-    }
+    // Temporarily disable player count filtering to prevent breaking game relationships
+    // TODO: Implement proper player count filtering that preserves game data
+    // if (minPlayersFilter) {
+    //   query = query.filter('remix_games.game.min_players', 'lte', minPlayersFilter)
+    // }
+    // if (maxPlayersFilter) {
+    //   query = query.filter('remix_games.game.max_players', 'gte', maxPlayersFilter)
+    // }
 
     // Apply sorting
     switch (sortFilter) {
@@ -240,7 +265,7 @@ export default async function BrowsePage({
     }
 
     // Transform data
-    remixes = (remixesData as SupabaseRemix[] || []).map(remix => {
+    let transformedRemixes = (remixesData as SupabaseRemix[] || []).map(remix => {
       const difficulty = remix.difficulty.charAt(0).toUpperCase() + remix.difficulty.slice(1).toLowerCase()
       if (!['Easy', 'Medium', 'Hard'].includes(difficulty)) {
         throw new Error(`Invalid difficulty value: ${difficulty}`)
@@ -256,18 +281,58 @@ export default async function BrowsePage({
         user_id: remix.user_id,
         creator_username: remix.creator?.username || 'Unknown User',
         created_at: remix.created_at,
-        games: remix.remix_games.map((g) => ({
-          name: g.game.name,
-          id: g.game.bgg_id,
-          bggUrl: g.game.bgg_url || `https://boardgamegeek.com/boardgame/${g.game.bgg_id}/${g.game.name.toLowerCase().replace(/\s+/g, '-')}`,
-          image: g.game.image_url || "/placeholder.svg"
-        })),
-        tags: remix.remix_games.map((g) => g.game.name),
+        games: remix.remix_games
+          .filter((g) => g && g.game && g.game.name) // Filter out null games
+          .map((g) => ({
+            name: g.game.name,
+            id: g.game.bgg_id,
+            bggUrl: g.game.bgg_url || `https://boardgamegeek.com/boardgame/${g.game.bgg_id}/${g.game.name.toLowerCase().replace(/\s+/g, '-')}`,
+            image: g.game.image_url || "/placeholder.svg"
+          })),
+        tags: remix.remix_games
+          .filter((g) => g && g.game && g.game.name) // Filter out null games
+          .map((g) => g.game.name),
         hashtags: remix.remix_hashtags
           .filter((h) => h && h.hashtag)
           .map((h) => h.hashtag.name)
       }
     })
+
+    // Apply client-side filtering to preserve game relationships
+    remixes = transformedRemixes.filter(remix => {
+      // Filter by single game name
+      if (gameFilter && !remix.games.some(game => 
+        game.name.toLowerCase().includes(gameFilter.toLowerCase())
+      )) {
+        return false
+      }
+
+      // Filter by multiple games
+      if (gamesFilter && gamesFilter.length > 0 && gamesFilter[0] !== '') {
+        const hasAllGames = gamesFilter.every(filterGame => 
+          remix.games.some(game => game.name === filterGame)
+        )
+        if (!hasAllGames) return false
+      }
+
+      // Filter by hashtag
+      if (hashtagFilter && !remix.hashtags.some(tag => 
+        tag.toLowerCase().includes(hashtagFilter.toLowerCase())
+      )) {
+        return false
+      }
+
+      // Filter by multiple tags
+      if (tagsFilter && tagsFilter.length > 0 && tagsFilter[0] !== '') {
+        const hasAllTags = tagsFilter.every(filterTag => 
+          remix.hashtags.some(tag => tag === filterTag)
+        )
+        if (!hasAllTags) return false
+      }
+
+      return true
+    })
+
   } catch (error) {
     console.error("Error in BrowsePage:", error)
     remixes = []

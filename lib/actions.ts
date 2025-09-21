@@ -157,7 +157,7 @@ export async function getFavoriteStatus(remixIds: string[]) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      console.error("Authentication error:", userError)
+      // Return empty object for anonymous users instead of logging error
       return {}
     }
 
@@ -190,7 +190,7 @@ export async function getUserVotes(remixIds: string[]) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      console.error("Authentication error:", userError)
+      // Return empty object for anonymous users instead of logging error
       return {}
     }
 

@@ -24,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Check, ChevronsUpDown, Search } from 'lucide-react'
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BrowseFiltersProps {
@@ -118,6 +118,18 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
     router.push(`/browse?${params.toString()}`)
   }
 
+  const handleClearFilters = () => {
+    setCreator('')
+    setSelectedGames([])
+    setSelectedTags([])
+    setDifficulty('any')
+    setMinPlayers('')
+    setMaxPlayers('')
+    
+    // Navigate to browse page without any filters
+    router.push('/browse')
+  }
+
   // Initialize filters from URL on mount
   useEffect(() => {
     setCreator(initialFilters.creator || '')
@@ -157,14 +169,15 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search games..." />
-              <CommandEmpty>No game found.</CommandEmpty>
-              <CommandGroup className="max-h-64 overflow-auto">
+          <PopoverContent className="w-full p-0 bg-white border border-gray-200">
+            <Command className="bg-white">
+              <CommandInput placeholder="Search games..." className="bg-white" />
+              <CommandEmpty className="bg-white text-gray-500">No game found.</CommandEmpty>
+              <CommandGroup className="max-h-64 overflow-auto bg-white">
                 {allGames.map((game) => (
                   <CommandItem
                     key={game.id}
+                    className="bg-white hover:bg-gray-100 text-gray-900"
                     onSelect={() => {
                       setSelectedGames((prev) =>
                         prev.includes(game.name)
@@ -204,14 +217,15 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search tags..." />
-              <CommandEmpty>No tag found.</CommandEmpty>
-              <CommandGroup className="max-h-64 overflow-auto">
+          <PopoverContent className="w-full p-0 bg-white border border-gray-200">
+            <Command className="bg-white">
+              <CommandInput placeholder="Search tags..." className="bg-white" />
+              <CommandEmpty className="bg-white text-gray-500">No tag found.</CommandEmpty>
+              <CommandGroup className="max-h-64 overflow-auto bg-white">
                 {allTags.map((tag) => (
                   <CommandItem
                     key={tag}
+                    className="bg-white hover:bg-gray-100 text-gray-900"
                     onSelect={() => {
                       setSelectedTags((prev) =>
                         prev.includes(tag)
@@ -244,11 +258,11 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
           <SelectTrigger className="mt-1">
             <SelectValue placeholder="Select difficulty" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">Any</SelectItem>
-            <SelectItem value="Easy">Easy</SelectItem>
-            <SelectItem value="Medium">Medium</SelectItem>
-            <SelectItem value="Hard">Hard</SelectItem>
+          <SelectContent className="bg-white border border-gray-200">
+            <SelectItem value="any" className="bg-white hover:bg-gray-100 text-gray-900">Any</SelectItem>
+            <SelectItem value="Easy" className="bg-white hover:bg-gray-100 text-gray-900">Easy</SelectItem>
+            <SelectItem value="Medium" className="bg-white hover:bg-gray-100 text-gray-900">Medium</SelectItem>
+            <SelectItem value="Hard" className="bg-white hover:bg-gray-100 text-gray-900">Hard</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -280,13 +294,23 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
         </div>
       </div>
 
-      <Button 
-        onClick={handleSearch}
-        className="w-full bg-[#FF6B35] hover:bg-[#e55a2a] text-white"
-      >
-        <Search className="w-4 h-4 mr-2" />
-        Search
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={handleSearch}
+          className="flex-1 bg-[#FF6B35] hover:bg-[#e55a2a] text-white"
+        >
+          <Search className="w-4 h-4 mr-2" />
+          Search
+        </Button>
+        <Button 
+          onClick={handleClearFilters}
+          variant="outline"
+          className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
+        >
+          <X className="w-4 h-4 mr-2" />
+          Clear
+        </Button>
+      </div>
     </div>
   )
 } 

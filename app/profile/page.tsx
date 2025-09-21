@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -31,7 +31,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false)
   const [remixes, setRemixes] = useState<Remix[]>([])
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     async function loadProfile() {
@@ -41,18 +40,17 @@ export default function ProfilePage() {
       }
 
       try {
-        // Get authenticated user to ensure we have valid session
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-        if (authError || !authUser) {
-          throw new Error('Failed to authenticate user')
+        // Use the user from auth context directly
+        if (!user) {
+          throw new Error('No authenticated user')
         }
 
         const [profileData, remixesData] = await Promise.all([
           supabase
             .from('profiles')
             .select('username, full_name')
-            .eq('id', authUser.id)
-            .single(),
+            .eq('id', user.id)
+            .maybeSingle(), // Use maybeSingle() instead of single() to handle missing profiles
           supabase
             .from('remixes')
             .select(`
@@ -64,13 +62,14 @@ export default function ProfilePage() {
               downvotes,
               created_at
             `)
-            .eq('user_id', authUser.id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false })
         ])
 
         if (profileData.error) {
           console.error('Error loading profile:', profileData.error)
-          throw new Error('Failed to load profile data')
+          // Don't throw error for profile - user might not have created one yet
+          console.log('Profile not found, user will need to create one')
         }
 
         if (remixesData.error) {
@@ -81,6 +80,10 @@ export default function ProfilePage() {
         if (profileData.data) {
           setUsername(profileData.data.username || '')
           setFullName(profileData.data.full_name || '')
+        } else {
+          // Profile doesn't exist yet, initialize with empty values
+          setUsername('')
+          setFullName('')
         }
 
         if (remixesData.data) {
@@ -95,7 +98,7 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [user, router, supabase])
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,19 +109,20 @@ export default function ProfilePage() {
     setLoading(true)
 
     try {
-      // Get authenticated user to ensure we have valid session
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-      if (authError || !authUser) {
-        throw new Error('Failed to authenticate user')
+      // Use the user from auth context directly
+      if (!user) {
+        throw new Error('No authenticated user')
       }
 
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          id: authUser.id,
-          username,
-          full_name: fullName,
+          id: user.id,
+          username: username || null,
+          full_name: fullName || null,
           updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'id'
         })
 
       if (error) throw error

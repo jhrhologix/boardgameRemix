@@ -3,15 +3,17 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface SignInFormProps {
   callbackUrl: string
+  onForgotPassword?: () => void
 }
 
-export function SignInForm({ callbackUrl }: SignInFormProps) {
+export function SignInForm({ callbackUrl, onForgotPassword }: SignInFormProps) {
+  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,27 +26,17 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
     setLoading(true)
 
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { user, error } = await signIn(email, password)
 
       if (error) throw error
 
-      // Verify the session was created
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Failed to create session')
-
-      // Get authenticated user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Failed to get user data')
-
-      // Only redirect if we have a valid session and user
-      router.push(callbackUrl || '/')
-      router.refresh()
+      // Only redirect if we have a valid user
+      if (user) {
+        router.push(callbackUrl || '/')
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
       setLoading(false)
     }
   }
@@ -81,6 +73,18 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
       >
         {loading ? 'Signing in...' : 'Sign in'}
       </Button>
+
+      {onForgotPassword && (
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Forgot your password?
+          </button>
+        </div>
+      )}
     </form>
   )
 } 
