@@ -35,7 +35,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       if (!user) {
-        router.push('/auth')
+        router.push('/auth?callbackUrl=/profile')
         return
       }
 

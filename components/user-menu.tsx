@@ -11,7 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { Heart, LogOut, Settings, UserIcon } from "lucide-react"
+import { Heart, LogOut, Settings, UserIcon, Plus } from "lucide-react"
 import Link from "next/link"
 
 interface UserMenuProps {
@@ -52,6 +52,13 @@ export default function UserMenu({ user }: UserMenuProps) {
         <div className="px-4 py-3 border-b border-[#333]">
           <p className="text-sm font-medium text-white">{user.email}</p>
         </div>
+
+        <Link href="/submit">
+          <DropdownMenuItem className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer">
+            <Plus className="mr-2 h-4 w-4" />
+            <span>Create Remix</span>
+          </DropdownMenuItem>
+        </Link>
 
         <Link href="/profile">
           <DropdownMenuItem className="text-gray-300 focus:bg-[#1a1a1a] focus:text-[#FF6B35] cursor-pointer">
