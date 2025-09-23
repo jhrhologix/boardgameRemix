@@ -13,7 +13,7 @@ export default function Home() {
     generateOrganizationStructuredData()
   ]
   
-  // Preview deployment trigger
+  // Preview deployment trigger - setting up auto-deployment hooks
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
