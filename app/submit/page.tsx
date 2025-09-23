@@ -21,10 +21,7 @@ export default async function SubmitPage({
   // Use getUser() for security as recommended by Supabase
   const { data: { user }, error } = await supabase.auth.getUser()
 
-  console.log('Submit page - User:', user?.id, 'Error:', error)
-
   if (error || !user) {
-    console.log('Redirecting to auth with callbackUrl=/submit')
     redirect("/auth?callbackUrl=/submit")
   }
 

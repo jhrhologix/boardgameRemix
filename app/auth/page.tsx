@@ -22,7 +22,8 @@ export default function AuthPage() {
   useEffect(() => {
     // If user is authenticated, redirect them
     if (user && !loading) {
-      router.push(callbackUrl || '/')
+      const targetUrl = callbackUrl || '/'
+      router.push(targetUrl)
     }
   }, [user, loading, callbackUrl, router])
 
