@@ -4,23 +4,23 @@ export default function HowItWorks() {
   const steps = [
     {
       icon: <Search className="h-12 w-12 text-[#FF6B35]" />,
-      title: "Find Remixes",
-      description: "Search for game remixes based on the board games you already own at home.",
+      title: "Find Board Game Remixes",
+      description: "Search for <strong>creative board game combinations</strong> based on the tabletop games you already own. Discover <strong>game variants</strong> and <strong>custom rules</strong> that breathe new life into your collection.",
     },
     {
       icon: <BookOpen className="h-12 w-12 text-[#FF6B35]" />,
-      title: "Learn New Rules",
-      description: "Discover new rules and setups that transform familiar games into fresh experiences.",
+      title: "Learn New Game Rules",
+      description: "Discover <strong>innovative game modifications</strong> and <strong>setup instructions</strong> that transform familiar board games into fresh, exciting experiences. Master <strong>creative gaming</strong> techniques.",
     },
     {
       icon: <Upload className="h-12 w-12 text-[#FF6B35]" />,
-      title: "Submit Your Ideas",
-      description: "Created a unique remix? Share your game invention with our community.",
+      title: "Share Your Game Ideas",
+      description: "Created a unique <strong>board game remix</strong>? Share your <strong>game invention</strong> and <strong>creative variants</strong> with our community of <strong>gaming innovators</strong>.",
     },
     {
       icon: <Users className="h-12 w-12 text-[#FF6B35]" />,
-      title: "Play Together",
-      description: "Invite friends and family to enjoy your new game discoveries.",
+      title: "Play with Friends",
+      description: "Invite friends and family to enjoy your new <strong>tabletop game discoveries</strong>. Build lasting memories with <strong>creative board game combinations</strong>.",
     },
   ]
 
@@ -28,9 +28,9 @@ export default function HowItWorks() {
     <section className="py-16 bg-[#004E89] text-white">
       <div className="container mx-auto px-4">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">How <strong>Board Game Remixing</strong> Works</h2>
           <p className="text-lg max-w-2xl mx-auto text-gray-200">
-            Remix Games makes it easy to breathe new life into your board game collection
+            <strong>Remix Games</strong> makes it easy to breathe new life into your <strong>board game collection</strong> with <strong>creative combinations</strong> and <strong>innovative variants</strong>
           </p>
         </div>
 

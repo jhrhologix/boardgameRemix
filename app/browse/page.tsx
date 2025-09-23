@@ -359,7 +359,9 @@ export default async function BrowsePage({
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h1 className="text-3xl font-bold text-[#FF6B35]">Browse Remixes</h1>
+              <h1 className="text-3xl font-bold text-[#FF6B35]">
+                Browse <strong>Board Game Remixes</strong> & <strong>Creative Combinations</strong>
+              </h1>
               <div className="flex items-center gap-4">
                 <SortOptions />
                 <Link href="/submit">

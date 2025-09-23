@@ -10,9 +10,33 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /_next/
 Disallow: /profile/
+Disallow: /my-remixes/
+Disallow: /favorites/
 
 # Allow important pages
 Allow: /browse
 Allow: /popular
 Allow: /submit
 Allow: /remixes/
+Allow: /about
+Allow: /faq
+Allow: /contact
+Allow: /community-guidelines
+Allow: /privacy-policy
+Allow: /terms-of-service
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Specific bot instructions
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2

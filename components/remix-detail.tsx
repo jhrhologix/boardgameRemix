@@ -167,7 +167,9 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-[#FF6B35] mb-2">{remix.title}</h1>
+              <h1 className="text-3xl font-bold text-[#FF6B35] mb-2">
+                <strong>{remix.title}</strong> - <strong>Board Game Remix</strong>
+              </h1>
               <div className="flex items-center gap-4 text-gray-400">
                 <div className="flex items-center gap-2">
                   <Clock size={16} />
@@ -273,7 +275,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
 
       {/* Rules section */}
       <div className="p-6 border-t border-[#333]">
-        <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Rules</h2>
+        <h2 className="text-2xl font-bold text-[#FF6B35] mb-4"><strong>Game Rules</strong> & <strong>Instructions</strong></h2>
         <div className="prose prose-invert max-w-none">
           {remix.rules.split('\n').map((paragraph, index) => (
             <p key={index} className="mb-4 text-gray-300">{paragraph}</p>
@@ -284,7 +286,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
       {/* Setup Instructions section */}
       {remix.setup_instructions && (
         <div className="p-6 border-t border-[#333]">
-          <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Setup Instructions</h2>
+          <h2 className="text-2xl font-bold text-[#FF6B35] mb-4"><strong>Setup Instructions</strong> & <strong>Game Preparation</strong></h2>
           <div className="prose prose-invert max-w-none">
             {remix.setup_instructions.split('\n').map((paragraph, index) => (
               <p key={index} className="mb-4 text-gray-300">{paragraph}</p>
@@ -300,7 +302,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
 
       {/* Games section */}
       <div className="p-6 border-t border-[#333]">
-        <h2 className="text-2xl font-bold text-[#FF6B35] mb-4">Required Games</h2>
+        <h2 className="text-2xl font-bold text-[#FF6B35] mb-4"><strong>Required Board Games</strong> for This <strong>Remix</strong></h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {remix.games?.map((gameRel) => (
             <div key={gameRel.game.bgg_id} className="flex flex-col gap-2">
@@ -313,7 +315,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 <div className="aspect-[16/9] relative h-48">
                   <Image
                     src={getLegalBGGImageUrl(gameRel.game.bgg_id)}
-                    alt={gameRel.game.name}
+                    alt={`${gameRel.game.name} board game box cover - Required for ${remix.title} remix`}
                     fill
                     className="object-contain"
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
