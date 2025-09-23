@@ -13,7 +13,7 @@ export default function Home() {
     generateOrganizationStructuredData()
   ]
   
-  // Production deployment ready
+  // Production deployment ready - force refresh
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
