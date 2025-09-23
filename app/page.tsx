@@ -12,6 +12,8 @@ export default function Home() {
     generateWebsiteStructuredData(),
     generateOrganizationStructuredData()
   ]
+  
+  // Preview deployment trigger
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
