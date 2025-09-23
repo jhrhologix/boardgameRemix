@@ -26,7 +26,6 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
   const {
     formState,
     existingTags,
-    isDevelopment,
     hasValidRecaptchaKey,
     recaptchaRef,
     updateFormData,
@@ -323,7 +322,7 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
       </div>
 
       {/* reCAPTCHA */}
-      {!isDevelopment && hasValidRecaptchaKey && (
+      {hasValidRecaptchaKey && (
         <div className="flex justify-center">
           <ReCAPTCHA
             ref={recaptchaRef}
@@ -332,19 +331,11 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
           />
         </div>
       )}
-      
-      {isDevelopment && (
-        <div className="flex justify-center">
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-sm">
-            🛠️ Development Mode: reCAPTCHA disabled
-          </div>
-        </div>
-      )}
 
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={formState.isSubmitting || (!isDevelopment && hasValidRecaptchaKey && !formState.captchaToken) || false}
+        disabled={formState.isSubmitting || (hasValidRecaptchaKey && !formState.captchaToken) || false}
         className="w-full bg-[#FF6B35] hover:bg-[#e55a2a] text-white"
       >
         {formState.isSubmitting ? (

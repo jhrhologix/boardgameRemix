@@ -1,10 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary'
 
-// Configure Cloudinary with your provided credentials
+// Configure Cloudinary with environment variables
 cloudinary.config({
-  cloud_name: 'dmp6byebm',
-  api_key: '282637517386974',
-  api_secret: process.env.CLOUDINARY_API_SECRET, // This should be in .env.local
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '636325382282287',
+  api_key: process.env.CLOUDINARY_API_KEY || '282637517386974',
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
 export { cloudinary }

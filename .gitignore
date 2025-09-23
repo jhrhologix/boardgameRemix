@@ -30,6 +30,18 @@ yarn-error.log*
 .env
 *.env
 
+# Security - Never commit these
+**/client-temp.ts
+**/temp-*.ts
+**/*-temp.ts
+**/test-*.ts
+**/*-test.ts
+**/debug-*.ts
+**/*-debug.ts
+
+# Documentation files
+*.md
+
 # Vercel
 .vercel
 

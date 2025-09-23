@@ -45,8 +45,7 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
   const [existingTags, setExistingTags] = useState<string[]>([])
   const recaptchaRef = useRef<any>(null)
 
-  // Check if we're in development mode
-  const isDevelopment = process.env.NODE_ENV === 'development'
+  // Check if reCAPTCHA is properly configured
   const hasValidRecaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && 
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY !== 'your_site_key_here'
 
@@ -171,7 +170,7 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     if (data.selectedGames.length < 2) return "Please select at least 2 board games for your remix"
     if (data.maxPlayers && isNaN(Number(data.maxPlayers))) return "Maximum players must be a number"
     
-    if (!isDevelopment && hasValidRecaptchaKey && !formState.captchaToken) {
+    if (hasValidRecaptchaKey && !formState.captchaToken) {
       return "Please verify that you are human"
     }
 
@@ -341,7 +340,6 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
   return {
     formState,
     existingTags,
-    isDevelopment,
     hasValidRecaptchaKey,
     recaptchaRef,
     updateFormData,

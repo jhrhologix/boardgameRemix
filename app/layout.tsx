@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth'
 import { NavBar } from '@/components/nav-bar'
+import { GoogleAnalytics } from '@/components/google-analytics'
 
 export const metadata: Metadata = {
   title: {
@@ -78,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <GoogleAnalytics />
         <AuthProvider>
           <NavBar />
           <main>
