@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
 import VoteButtons from '@/components/vote-buttons'
 import FavoriteButton from '@/components/favorite-button'
 import TipJar from '@/components/tip-jar'
@@ -88,6 +89,7 @@ function getAmazonLink(gameName: string) {
 
 export default function RemixDetail({ initialData }: RemixDetailProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [remix, setRemix] = useState<RemixData>(initialData)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
@@ -98,36 +100,37 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
 
   useEffect(() => {
     async function loadUserData() {
-      const supabase = createClient()
+      if (!user) {
+        setIsAuthenticated(false)
+        setIsOwner(false)
+        setUserVote(undefined)
+        setIsFavorited(false)
+        return
+      }
+
       try {
-        // Get authenticated user
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        if (authError) throw authError
-        
-        if (user) {
-          setIsAuthenticated(true)
-          setIsOwner(user.id === remix.user_id)
+        setIsAuthenticated(true)
+        setIsOwner(user.id === remix.user_id)
 
-          // Get user's vote
-          const { data: voteData } = await supabase
-            .from('user_votes')
-            .select('value')
-            .eq('user_id', user.id)
-            .eq('remix_id', remix.id)
-            .single()
+        // Get user's vote
+        const { data: voteData } = await supabase
+          .from('user_votes')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('remix_id', remix.id)
+          .single()
 
-          setUserVote(voteData?.value)
+        setUserVote(voteData?.value)
 
-          // Get favorite status
-          const { data: favoriteData } = await supabase
-            .from('favorites')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('remix_id', remix.id)
-            .single()
+        // Get favorite status
+        const { data: favoriteData } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('remix_id', remix.id)
+          .single()
 
-          setIsFavorited(!!favoriteData)
-        }
+        setIsFavorited(!!favoriteData)
       } catch (err) {
         console.error('Error loading user data:', err)
         setError(err instanceof Error ? err.message : 'Failed to load user data')
@@ -135,14 +138,13 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
     }
 
     loadUserData()
-  }, [remix.id, remix.user_id])
+  }, [user, remix.id, remix.user_id])
 
   const handleDelete = async () => {
     if (!isOwner || isDeleting) return
 
     setIsDeleting(true)
     try {
-      const supabase = createClient()
       const { error: deleteError } = await supabase
         .from('remixes')
         .delete()
@@ -197,7 +199,6 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 <FavoriteButton
                   remixId={remix.id}
                   isFavorited={isFavorited}
-                  isAuthenticated={isAuthenticated}
                 />
               )}
             </div>
@@ -360,7 +361,6 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
       <div className="p-6 border-t border-[#333]">
         <CommentsSection
           remixId={remix.id}
-          isAuthenticated={isAuthenticated}
           isOwner={isOwner}
         />
       </div>

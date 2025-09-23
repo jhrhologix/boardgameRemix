@@ -6,27 +6,27 @@ import { toggleFavorite } from "@/lib/actions"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAuth } from "@/lib/auth"
 
 interface FavoriteButtonProps {
   remixId: string
   isFavorited?: boolean
   className?: string
-  isAuthenticated?: boolean
 }
 
 export default function FavoriteButton({
   remixId,
   isFavorited = false,
   className = '',
-  isAuthenticated = false,
 }: FavoriteButtonProps) {
   const router = useRouter()
+  const { user } = useAuth()
 
   // Ensure all data is properly typed
   const safeProps = {
     remixId: String(remixId),
     isFavorited: Boolean(isFavorited),
-    isAuthenticated: Boolean(isAuthenticated),
+    isAuthenticated: Boolean(user),
   }
 
   const [optimisticFavorite, setOptimisticFavorite] = useState(safeProps.isFavorited)

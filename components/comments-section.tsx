@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
+import { useAuth } from '@/lib/auth'
 
 interface Comment {
   id: string
@@ -28,19 +29,20 @@ interface Comment {
 
 interface CommentsSectionProps {
   remixId: string
-  isAuthenticated: boolean
   isOwner: boolean
 }
 
-export default function CommentsSection({ remixId, isAuthenticated, isOwner }: CommentsSectionProps) {
+export default function CommentsSection({ remixId, isOwner }: CommentsSectionProps) {
+  const { user } = useAuth()
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingComments, setIsLoadingComments] = useState(true)
-  const [supabase] = useState(() => createClient())
   const { toast } = useToast()
   const router = useRouter()
+  
+  const isAuthenticated = !!user
 
   useEffect(() => {
     if (remixId) {
