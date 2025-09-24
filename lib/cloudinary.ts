@@ -134,11 +134,22 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
   createdAt: string
 }>> {
   try {
+    console.log('Searching for images with remixId:', remixId)
     // Search for images with filename pattern: {remixId}_*
     const result = await cloudinary.search
       .expression(`filename:${remixId}_*`)
       .max_results(100)
       .execute()
+
+    console.log('Cloudinary search result:', {
+      totalCount: result.total_count,
+      resourcesCount: result.resources.length,
+      resources: result.resources.map((r: any) => ({
+        publicId: r.public_id,
+        filename: r.filename,
+        context: r.context
+      }))
+    })
 
     return result.resources
       .map((resource: any) => {

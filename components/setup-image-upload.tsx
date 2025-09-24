@@ -51,11 +51,18 @@ export default function SetupImageUpload({
   // Load images from Cloudinary
   const loadImages = async () => {
     try {
+      console.log('Loading images for remixId:', remixId)
       const response = await fetch(`/api/remix-images?remixId=${remixId}`)
+      console.log('Load images response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('Loaded images data:', data)
         setImages(data.images || [])
         onImagesChange?.(data.images || [])
+      } else {
+        const errorData = await response.json()
+        console.error('Load images error:', errorData)
       }
     } catch (error) {
       console.error('Error loading images:', error)
