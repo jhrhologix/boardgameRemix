@@ -1,33 +1,27 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 // Configure Cloudinary with environment variables
-// Use CLOUDINARY_URL format: cloudinary://api_key:api_secret@cloud_name
-const cloudinaryUrl = process.env.CLOUDINARY_URL
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+const apiKey = process.env.CLOUDINARY_API_KEY
+const apiSecret = process.env.CLOUDINARY_API_SECRET
 
-if (!cloudinaryUrl) {
-  throw new Error('Missing required Cloudinary environment variable: CLOUDINARY_URL')
+// Only configure Cloudinary if we have the required variables (skip during build if not available)
+if (cloudName && apiKey && apiSecret) {
+  console.log('Cloudinary config loaded:', {
+    cloudName,
+    apiKey: apiKey.substring(0, 8) + '...', // Only show first 8 chars for security
+    hasApiSecret: !!apiSecret
+  })
+
+  // Configure Cloudinary
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret
+  })
+} else {
+  console.warn('Cloudinary environment variables not set - Cloudinary functionality will be limited')
 }
-
-// Parse the CLOUDINARY_URL to extract credentials
-const urlMatch = cloudinaryUrl.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/)
-if (!urlMatch) {
-  throw new Error('Invalid CLOUDINARY_URL format. Expected: cloudinary://api_key:api_secret@cloud_name')
-}
-
-const [, apiKey, apiSecret, cloudName] = urlMatch
-
-console.log('Cloudinary config parsed:', {
-  cloudName,
-  apiKey: apiKey.substring(0, 8) + '...', // Only show first 8 chars for security
-  hasApiSecret: !!apiSecret
-})
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret
-})
 
 export { cloudinary }
 
@@ -40,6 +34,10 @@ export async function uploadRemixSetupImage(
   mimeType: string = 'image/jpeg'
 ): Promise<{ url: string; publicId: string }> {
   try {
+    // Check if Cloudinary is configured
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      throw new Error('Cloudinary is not configured. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.')
+    }
     // New naming convention: {remixId}_{yyyymmddhhmmss} with order metadata
     const now = new Date()
     const timestamp = now.getFullYear().toString() +
