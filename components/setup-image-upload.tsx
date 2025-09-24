@@ -127,9 +127,12 @@ export default function SetupImageUpload({
       })
 
       const results = await Promise.all(uploadPromises)
+      console.log('Upload completed successfully, results:', results)
       
       // Refresh images from Cloudinary to get the latest data
+      console.log('Calling loadImages() to refresh images...')
       await loadImages()
+      console.log('loadImages() completed')
       
       // Clear description after successful upload
       setDescription('')
@@ -291,7 +294,7 @@ export default function SetupImageUpload({
               {/* Description Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-900">
-                  Image Description <span className="text-red-500">* REQUIRED</span>
+                  Image Description <span className="text-red-500">* REQUIRED FOR UPLOAD</span>
                 </label>
                 <input
                   type="text"
@@ -299,11 +302,10 @@ export default function SetupImageUpload({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe what this setup image shows (e.g., 'Game board setup with cards', 'Player pieces arranged', etc.)"
                   maxLength={255}
-                  className="w-full px-3 py-2 border border-red-300 rounded-md text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-xs text-red-600">
-                  {description.length}/255 characters - Description is required to upload images
+                <p className="text-xs text-gray-600">
+                  {description.length}/255 characters - Description is only required when uploading images
                 </p>
               </div>
 
