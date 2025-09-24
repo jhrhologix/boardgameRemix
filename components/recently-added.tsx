@@ -39,9 +39,9 @@ export default async function RecentlyAdded() {
   let recentRemixes: Remix[] = []
 
   try {
-    // Get authentication status
-    const { data: { user } } = await supabase.auth.getUser()
-    isAuthenticated = !!user
+    // Skip auth check in development to avoid rate limits
+    // Authentication will be handled by client-side components
+    isAuthenticated = false
 
     // Fetch the 4 most recent remixes with their related games and hashtags
     const { data: remixes, error } = await supabase

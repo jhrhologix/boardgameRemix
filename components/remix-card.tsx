@@ -2,10 +2,8 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { FavoriteButton } from "@/components/ui/favorite-button"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from '@/lib/database.types'
-import { useEffect, useState } from "react"
+import FavoriteButton from "@/components/favorite-button"
+import { useAuth } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
 
 interface RemixCardProps {
@@ -26,62 +24,11 @@ interface RemixCardProps {
     } | null
   }
   showFavoriteButton?: boolean
-  onFavoriteRemove?: (remixId: string) => void
 }
 
-export default function RemixCard({ remix, showFavoriteButton = false, onFavoriteRemove }: RemixCardProps) {
-  console.log('RemixCard component initialized:', { 
-    remixId: remix.id, 
-    showFavoriteButton,
-    hasOnFavoriteRemove: !!onFavoriteRemove 
-  })
-  const [userId, setUserId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClientComponentClient<Database>()
+export default function RemixCard({ remix, showFavoriteButton = false }: RemixCardProps) {
+  const { user } = useAuth()
 
-  useEffect(() => {
-    const getUser = async () => {
-      console.log('Starting user authentication check')
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-          console.error('Error getting user:', userError)
-          return
-        }
-        if (user) {
-          console.log('User authenticated successfully:', {
-            userId: user.id,
-            remixId: remix.id,
-            timestamp: new Date().toISOString()
-          })
-          setUserId(user.id)
-        } else {
-          console.log('No user authenticated')
-          setUserId(null)
-        }
-      } catch (err) {
-        console.error('Error in getUser:', err)
-      } finally {
-        setIsLoading(false)
-        console.log('Authentication check completed')
-      }
-    }
-
-    getUser()
-  }, [supabase, remix.id])
-
-  const handleFavoriteChange = (isFavorited: boolean) => {
-    console.log('Favorite change handler called:', { 
-      isFavorited, 
-      remixId: remix.id, 
-      userId,
-      timestamp: new Date().toISOString()
-    })
-    if (!isFavorited && onFavoriteRemove) {
-      console.log('Calling onFavoriteRemove')
-      onFavoriteRemove(remix.id)
-    }
-  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
@@ -96,12 +43,9 @@ export default function RemixCard({ remix, showFavoriteButton = false, onFavorit
     }
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-[#FF6B35] hover:border-white transition-colors duration-300">
       <div className="relative h-48">
         {remix.bgg_games[0]?.game.image_url ? (
           <Image
@@ -122,11 +66,10 @@ export default function RemixCard({ remix, showFavoriteButton = false, onFavorit
           <Link href={`/remixes/${remix.id}`} className="hover:underline">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">{remix.title}</h3>
           </Link>
-          {showFavoriteButton && userId && (
+          {showFavoriteButton && user && (
             <FavoriteButton
               remixId={remix.id}
-              userId={userId}
-              onFavoriteChange={handleFavoriteChange}
+              isFavorited={false}
             />
           )}
         </div>

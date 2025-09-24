@@ -132,6 +132,8 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
 
   // Initialize filters from URL on mount
   useEffect(() => {
+    console.log('BrowseFilters initialFilters:', initialFilters)
+    console.log('BrowseFilters allGames length:', allGames.length)
     setCreator(initialFilters.creator || '')
     setSelectedGames(initialFilters.games || [])
     setSelectedTags(initialFilters.tags || [])
@@ -139,6 +141,11 @@ export default function BrowseFilters({ allGames, allTags, initialFilters = {} }
     setMinPlayers(initialFilters.minPlayers?.toString() || '')
     setMaxPlayers(initialFilters.maxPlayers?.toString() || '')
   }, [initialFilters])
+
+  // Debug selected games state
+  useEffect(() => {
+    console.log('BrowseFilters selectedGames state:', selectedGames)
+  }, [selectedGames])
 
   return (
     <div className="space-y-4 p-4 bg-gray-900 rounded-lg">

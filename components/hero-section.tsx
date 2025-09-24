@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import type { BGGGame } from "@/lib/bgg-api"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
+import Image from "next/image"
 
 export default function HeroSection() {
   const router = useRouter()
@@ -16,6 +17,11 @@ export default function HeroSection() {
   const [error, setError] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [selectedGames, setSelectedGames] = useState<BGGGame[]>([])
+
+  // Debug selectedGames state
+  useEffect(() => {
+    console.log('Hero section selectedGames state changed:', selectedGames)
+  }, [selectedGames])
 
   useEffect(() => {
     const searchGames = async () => {
@@ -56,23 +62,20 @@ export default function HeroSection() {
   }, [query])
 
   const handleSelectGame = (game: BGGGame) => {
+    console.log('Hero section selecting game:', game)
     if (!selectedGames.some(g => g.id === game.id)) {
       setSelectedGames([...selectedGames, game])
+      console.log('Hero section selectedGames after add:', [...selectedGames, game])
     }
     setQuery("")
     setIsOpen(false)
   }
 
   const handleRemoveGame = (gameId: string) => {
+    console.log('Hero section removing game:', gameId)
     setSelectedGames(selectedGames.filter(game => game.id !== gameId))
   }
 
-  const handleSearch = () => {
-    if (selectedGames.length > 0) {
-      const gameNames = selectedGames.map(game => encodeURIComponent(game.name))
-      router.push(`/browse?game=${gameNames.join(',')}`)
-    }
-  }
 
   return (
     <section className="relative bg-[#004E89] text-white py-16 md:py-24">
@@ -91,9 +94,20 @@ export default function HeroSection() {
 
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-shadow-lg">
-            <strong>Creative Board Game Combinations</strong> & <strong>Custom Variants</strong>
-          </h1>
+          <div className="flex justify-center items-center gap-4 mb-6">
+            <Image 
+              src="/logo.png" 
+              alt="Remix Games Logo" 
+              width={80} 
+              height={80} 
+              className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
+            />
+            <div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-shadow-lg">
+                <strong>Creative Board Game Combinations</strong> & <strong>Custom Variants</strong>
+              </h1>
+            </div>
+          </div>
           <p className="text-xl md:text-2xl mb-8 text-[#FFBC42] font-semibold text-shadow-md">
             Discover <strong>innovative board game remixes</strong> using games you already own. Join the largest community of <strong>creative gamers</strong> sharing unique <strong>tabletop game combinations</strong>.
           </p>
@@ -130,13 +144,18 @@ export default function HeroSection() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onClick={() => setIsOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    router.push('/browse')
+                  }
+                }}
                 className="flex-grow px-4 py-3 text-[#2A2B2A] focus:outline-none"
               />
               <Button 
                 variant="default"
                 className="m-0 rounded-none"
-                onClick={handleSearch}
-                disabled={selectedGames.length === 0}
+                onClick={() => router.push('/browse')}
               >
                 <Search className="h-5 w-5" />
               </Button>
@@ -178,7 +197,16 @@ export default function HeroSection() {
           <Button 
             variant="default"
             className="px-8 py-6 text-lg shadow-lg transition-all"
-            onClick={() => router.push('/browse')}
+            onClick={() => {
+              console.log('Browse All Remixes button clicked!')
+              if (selectedGames.length > 0) {
+                const gameNames = selectedGames.map(game => encodeURIComponent(game.name))
+                console.log('Hero section navigating with games:', gameNames)
+                router.push(`/browse?games=${gameNames.join(',')}`)
+              } else {
+                router.push('/browse')
+              }
+            }}
           >
             Browse All Remixes
           </Button>

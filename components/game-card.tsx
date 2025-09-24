@@ -53,7 +53,7 @@ export default function GameCard({
   }[difficulty]
 
   return (
-    <Card className="bg-black border border-[#004E89]/20 hover:border-[#004E89]/40 transition-colors overflow-hidden">
+    <Card className="bg-[#FF6B35]/20 hover:border-2 hover:border-white transition-colors overflow-hidden border-0">
       <CardHeader className="p-0">
         <Link href={`/remixes/${id}`}>
           <RemixCompositeImage games={games} />
@@ -100,7 +100,6 @@ export default function GameCard({
         <FavoriteButton
           remixId={id}
           isFavorited={isFavorited}
-          isAuthenticated={isAuthenticated}
         />
       </CardFooter>
     </Card>

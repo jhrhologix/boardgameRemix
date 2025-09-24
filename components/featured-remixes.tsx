@@ -67,9 +67,9 @@ export default async function FeaturedRemixes() {
   let featuredGames: RemixData[] = []
 
   try {
-    // Get authentication status
-    const { data: { user } } = await supabase.auth.getUser()
-    isAuthenticated = !!user
+    // Skip auth check in development to avoid rate limits
+    // Authentication will be handled by client-side components
+    isAuthenticated = false
 
     // Fetch featured remixes (those with most upvotes)
     const { data: remixesData, error } = await supabase

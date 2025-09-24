@@ -22,16 +22,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // In development, completely skip auth to avoid rate limits
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('Development mode: Skipping auth checks to avoid rate limits')
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    // Production: Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn('Auth session error:', error.message)
+      }
       setUser(session?.user ?? null)
+      setLoading(false)
+    }).catch((error) => {
+      console.warn('Auth session error:', error.message)
+      setUser(null)
       setLoading(false)
     })
 
     // Listen for changes on auth state (signed in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null)
-      router.refresh()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        setUser(session?.user ?? null)
+        router.refresh()
+      }
     })
 
     return () => subscription.unsubscribe()

@@ -234,7 +234,7 @@ export default function RemixCompositeImage({
   if (gamesWithPotentialImages.length === 0) {
     const cols = games.length > 1 ? 2 : 1
     return (
-      <div className={`grid grid-cols-${cols} gap-2 aspect-[4/3] bg-black rounded-lg p-2 ${className}`}>
+      <div className={`grid grid-cols-${cols} gap-2 h-auto bg-black rounded-lg p-2 ${className}`}>
         {games.map((game, index) => (
           <div 
             key={index} 
@@ -261,14 +261,15 @@ export default function RemixCompositeImage({
 
   // Show actual game images or placeholders
   return (
-    <div className={`relative aspect-[4/3] bg-black rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative h-auto bg-black rounded-lg overflow-hidden ${className}`}>
       {gamesWithPotentialImages.length === 1 ? (
         // Single game - show full image
         <Image
           src={getLegalBGGImageUrl(gamesWithPotentialImages[0])}
           alt={gamesWithPotentialImages[0].name}
-          fill
-          className="object-contain p-2"
+          width={400}
+          height={300}
+          className="object-contain p-2 w-full h-auto"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority
           onError={(e) => {
@@ -278,10 +279,9 @@ export default function RemixCompositeImage({
         />
       ) : (
         // Multiple games - show grid
-        <div className="grid h-full w-full gap-1 p-2" 
+        <div className="grid w-full gap-1 p-2" 
           style={{ 
-            gridTemplateColumns: gamesWithPotentialImages.length > 2 ? "1fr 1fr" : "repeat(2, 1fr)",
-            gridTemplateRows: gamesWithPotentialImages.length > 2 ? "1fr 1fr" : "1fr"
+            gridTemplateColumns: gamesWithPotentialImages.length > 2 ? "1fr 1fr" : "repeat(2, 1fr)"
           }}
         >
           {gamesWithPotentialImages.slice(0, 4).map((game, index) => (
@@ -289,8 +289,9 @@ export default function RemixCompositeImage({
               <Image
                 src={getLegalBGGImageUrl(game)}
                 alt={game.name}
-                fill
-                className="object-contain p-1"
+                width={200}
+                height={150}
+                className="object-contain p-1 w-full h-auto"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                 priority={index === 0}
                 onError={(e) => {
@@ -298,24 +299,11 @@ export default function RemixCompositeImage({
                   e.currentTarget.src = '/placeholder.svg'
                 }}
               />
-              {/* Game name overlay for multiple games */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate">
-                {getGameDisplayText(game.name)}
-              </div>
             </div>
           ))}
         </div>
       )}
       
-      {/* Difficulty badge */}
-      {difficulty && (
-        <div className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium z-10" style={{
-          backgroundColor: getDifficultyColor(difficulty),
-          color: 'white'
-        }}>
-          {difficulty}
-        </div>
-      )}
     </div>
   )
 }

@@ -165,12 +165,12 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
       {/* Header section */}
       <div className="p-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-[#FF6B35] mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#FF6B35] mb-2">
                 <strong>{remix.title}</strong> - <strong>Board Game Remix</strong>
               </h1>
-              <div className="flex items-center gap-4 text-gray-400">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-400">
                 <div className="flex items-center gap-2">
                   <Clock size={16} />
                   <span>{remix.duration} min</span>
@@ -189,7 +189,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 </div>
               </div>
             </div>
-            <div className="flex items-start gap-4">
+            <div className="flex items-center justify-center lg:justify-start gap-4">
               <VoteButtons
                 remixId={remix.id}
                 upvotes={remix.upvotes}

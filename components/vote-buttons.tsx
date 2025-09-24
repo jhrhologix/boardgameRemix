@@ -37,7 +37,7 @@ export default function VoteButtons({
         variant: "destructive",
         action: (
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.push('/auth')}
             className="bg-white text-black px-3 py-2 rounded hover:bg-gray-100"
           >
             Log In
@@ -58,7 +58,7 @@ export default function VoteButtons({
       
       if (!result.success) {
         if (result.error === 'authentication') {
-          router.push('/login')
+          router.push('/auth')
           return
         }
         throw new Error(result.message)
@@ -79,19 +79,21 @@ export default function VoteButtons({
 
   return (
     <TooltipProvider>
-      <div className={cn("flex items-center gap-2", className)}>
+      <div className={cn("flex items-center gap-1 sm:gap-2", className)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={() => handleVote('upvote')}
               disabled={isLoading}
               className={cn(
-                "flex items-center gap-1 transition-colors",
-                userVote === 'upvote' ? "text-green-500" : "text-gray-400 hover:text-green-500"
+                "flex items-center gap-1 px-2 py-1 rounded-md transition-colors min-h-[40px] min-w-[40px] justify-center",
+                userVote === 'upvote' 
+                  ? "text-green-500 bg-green-500/10" 
+                  : "text-gray-400 hover:text-green-500 hover:bg-green-500/10"
               )}
             >
-              <ThumbsUp size={20} />
-              <span>{upvotes || 0}</span>
+              <ThumbsUp size={18} className="sm:w-5 sm:h-5" />
+              <span className="text-sm font-medium">{upvotes || 0}</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>
@@ -105,12 +107,14 @@ export default function VoteButtons({
               onClick={() => handleVote('downvote')}
               disabled={isLoading}
               className={cn(
-                "flex items-center gap-1 transition-colors",
-                userVote === 'downvote' ? "text-red-500" : "text-gray-400 hover:text-red-500"
+                "flex items-center gap-1 px-2 py-1 rounded-md transition-colors min-h-[40px] min-w-[40px] justify-center",
+                userVote === 'downvote' 
+                  ? "text-red-500 bg-red-500/10" 
+                  : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
               )}
             >
-              <ThumbsDown size={20} />
-              <span>{downvotes || 0}</span>
+              <ThumbsDown size={18} className="sm:w-5 sm:h-5" />
+              <span className="text-sm font-medium">{downvotes || 0}</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>

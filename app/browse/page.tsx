@@ -144,7 +144,9 @@ export default async function BrowsePage({
   const sortFilter = params.sort
   const searchQuery = params.q
   const creatorFilter = params.creator
-  const gamesFilter = params.games?.split(',') || []
+  const gamesFilter = params.games?.split(',').map(game => decodeURIComponent(game)) || []
+  console.log('BrowsePage gamesFilter:', gamesFilter)
+  console.log('BrowsePage params.games:', params.games)
   const tagsFilter = params.tags?.split(',') || []
   const difficultyFilter = params.difficulty
   const minPlayersFilter = params.minPlayers ? parseInt(params.minPlayers) : undefined

@@ -9,6 +9,11 @@ export const metadata: Metadata = {
     default: 'Remix Games - Creative Board Game Combinations & Variants',
     template: '%s | Remix Games - Board Game Remixes'
   },
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
   description: 'Discover and create innovative board game combinations using games you already own. Join the largest community of creative gamers sharing unique remixes, variants, and custom rules for tabletop games.',
   keywords: [
     'board games',

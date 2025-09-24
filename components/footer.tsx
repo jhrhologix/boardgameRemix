@@ -53,11 +53,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-[#FF6B35]">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
                 <Link href="/privacy-policy" className="text-gray-300 hover:text-[#FF6B35]">
                   Privacy Policy
                 </Link>
@@ -75,7 +70,10 @@ export default function Footer() {
             <p className="text-gray-300 mb-4">
               Subscribe to get updates on new game remixes and features.
             </p>
-            <NewsletterForm />
+            {/* <NewsletterForm /> */}
+            <div className="text-gray-500 text-sm">
+              Newsletter coming soon!
+            </div>
           </div>
         </div>
 
