@@ -323,12 +323,23 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
 
       {/* reCAPTCHA */}
       {hasValidRecaptchaKey && (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center space-y-2">
           <ReCAPTCHA
             ref={recaptchaRef}
             sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
             onChange={(token) => updateFormState({ captchaToken: token })}
+            onErrored={(error) => {
+              console.error('reCAPTCHA Error:', error)
+              updateFormState({ captchaError: 'reCAPTCHA failed to load. Please refresh the page.' })
+            }}
+            onExpired={() => {
+              console.log('reCAPTCHA expired')
+              updateFormState({ captchaToken: null })
+            }}
           />
+          {formState.captchaError && (
+            <p className="text-red-500 text-sm">{formState.captchaError}</p>
+          )}
         </div>
       )}
 

@@ -20,6 +20,7 @@ export interface FormState {
   isSubmitting: boolean
   error: string | null
   captchaToken: string | null
+  captchaError: string | null
 }
 
 export function useSubmitRemixForm(userId: string, remixId?: string) {
@@ -40,6 +41,7 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     isSubmitting: false,
     error: null,
     captchaToken: null,
+    captchaError: null,
   })
 
   const [existingTags, setExistingTags] = useState<string[]>([])
@@ -47,7 +49,16 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
 
   // Check if reCAPTCHA is properly configured
   const hasValidRecaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && 
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY !== 'your_site_key_here'
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY !== 'your_site_key_here' &&
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY.length > 10
+
+  // Debug reCAPTCHA configuration
+  console.log('reCAPTCHA Debug:', {
+    hasKey: !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    keyLength: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.length,
+    keyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 10),
+    hasValidKey: hasValidRecaptchaKey
+  })
 
   // Load existing remix data if editing
   useEffect(() => {

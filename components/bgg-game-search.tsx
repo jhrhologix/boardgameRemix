@@ -13,9 +13,12 @@ interface BGGGameSearchProps {
   onRemoveGame: (gameId: string) => void
 }
 
+type SearchType = 'contains' | 'starts_with' | 'exact'
+
 export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGame }: BGGGameSearchProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [searchType, setSearchType] = useState<SearchType>('contains')
   const [searchResults, setSearchResults] = useState<BGGGame[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,8 +47,8 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
       setError(null)
       
       try {
-        console.log('Sending search request for:', query)
-        const response = await fetch(`/api/bgg/search?q=${encodeURIComponent(query)}`)
+        console.log('Sending search request for:', query, 'type:', searchType)
+        const response = await fetch(`/api/bgg/search?q=${encodeURIComponent(query)}&type=${searchType}`)
         const data = await response.json()
         console.log('Raw API response:', data)
 
@@ -77,7 +80,7 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
 
     const debounceTimer = setTimeout(searchGames, 300)
     return () => clearTimeout(debounceTimer)
-  }, [query])
+  }, [query, searchType])
 
   const handleSelectGame = (game: BGGGame) => {
     console.log('Selecting game:', game)
@@ -115,6 +118,17 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
         </div>
 
         <div className="relative">
+          <div className="flex gap-2 mb-2">
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value as SearchType)}
+              className="px-3 py-2 border rounded-md text-gray-900 bg-white border-gray-300"
+            >
+              <option value="contains">Contains</option>
+              <option value="starts_with">Starts with</option>
+              <option value="exact">Exact match</option>
+            </select>
+          </div>
           <div className="flex gap-2">
             <input
               type="text"
