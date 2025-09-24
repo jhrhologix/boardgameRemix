@@ -24,8 +24,11 @@ export default async function SubmitPage({
 
   // If no session or user, redirect to auth
   if (!session || !user || error) {
+    console.log('Server-side auth check failed:', { session: !!session, user: !!user, error })
     redirect("/auth?callbackUrl=/submit")
   }
+
+  console.log('Server-side auth check passed:', { userId: user.id, email: user.email })
 
   // If editing, verify the user owns the remix
   if (editId) {
