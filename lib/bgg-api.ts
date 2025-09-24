@@ -240,7 +240,7 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
 
     const results: BGGGame[] = []
 
-    for (let i = 0; i < items.length && i < 20; i++) {
+    for (let i = 0; i < items.length && i < 50; i++) {
       try {
         const item = items[i]
         const id = item.getAttribute("id")
@@ -272,6 +272,10 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
         // Exact match gets highest score
         if (nameLower === queryLower) {
           relevanceScore = 100
+        }
+        // Classic UNO game gets special priority (ID 2223)
+        else if (id === "2223") {
+          relevanceScore = 95
         }
         // Starts with query gets high score
         else if (nameLower.startsWith(queryLower)) {

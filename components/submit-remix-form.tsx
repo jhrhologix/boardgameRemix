@@ -132,7 +132,7 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
 
       {/* Games Selection */}
       <div className="space-y-2">
-        <Label className="text-gray-900">Board Games * (Select at least 2)</Label>
+        <Label className="text-gray-900">Board Games *</Label>
         <BGGGameSearch
           onSelectGame={addGame}
           selectedGames={formState.data.selectedGames}
