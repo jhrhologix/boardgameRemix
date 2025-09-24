@@ -4,7 +4,6 @@ import { useAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import SubmitRemixForm from './submit-remix-form'
-import DebugAuth from './debug-auth'
 
 interface SubmitPageWrapperProps {
   userId: string
@@ -62,9 +61,6 @@ export default function SubmitPageWrapper({ userId, remixId }: SubmitPageWrapper
   }
 
   return (
-    <>
-      <SubmitRemixForm userId={user.id} remixId={remixId} />
-      <DebugAuth />
-    </>
+    <SubmitRemixForm userId={user.id} remixId={remixId} />
   )
 }
