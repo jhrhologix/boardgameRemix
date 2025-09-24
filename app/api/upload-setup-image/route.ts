@@ -109,6 +109,15 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    console.log('About to upload to Cloudinary:', {
+      remixId,
+      imageOrder,
+      description: description.substring(0, 50),
+      fileType: file.type,
+      fileSize: file.size,
+      bufferSize: buffer.length
+    })
+
     // Upload to Cloudinary with proper naming convention
     const uploadResult = await uploadRemixSetupImage(
       buffer,
@@ -117,6 +126,11 @@ export async function POST(request: NextRequest) {
       description,
       file.type
     )
+
+    console.log('Cloudinary upload successful:', {
+      url: uploadResult.url,
+      publicId: uploadResult.publicId
+    })
 
     return NextResponse.json({
       success: true,
@@ -128,8 +142,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Upload error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: process.env.NODE_ENV === 'development' ? error : undefined
+      },
       { status: 500 }
     )
   }

@@ -29,6 +29,14 @@ export async function uploadRemixSetupImage(
     
     const filename = `${remixId}_${timestamp}`
     
+    // Debug Cloudinary configuration
+    console.log('Cloudinary config check:', {
+      hasCloudName: !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+      hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    })
+    
     // Upload to Cloudinary with specific folder structure
     const result = await cloudinary.uploader.upload(
       `data:${mimeType};base64,${imageBuffer.toString('base64')}`,
