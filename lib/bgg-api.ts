@@ -187,7 +187,7 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
 }
 
 // Server-side version of the search function
-export async function searchBGGGamesServer(query: string, searchType: 'contains' | 'starts_with' | 'exact' = 'contains'): Promise<BGGGame[]> {
+export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
   try {
     console.log('Searching BGG for:', query)
     // Make search case-insensitive and use contains matching
@@ -264,7 +264,7 @@ export async function searchBGGGamesServer(query: string, searchType: 'contains'
         const yearNodes = item.getElementsByTagName("yearpublished")
         const yearPublished = yearNodes.length > 0 ? yearNodes[0].getAttribute("value") || undefined : undefined
 
-        // Calculate relevance score based on search type
+        // Calculate relevance score for better sorting (prioritize contains matches)
         const nameLower = name.toLowerCase()
         const queryLower = searchQuery.toLowerCase()
         let relevanceScore = 0
@@ -277,32 +277,21 @@ export async function searchBGGGamesServer(query: string, searchType: 'contains'
         else if (nameLower === queryLower) {
           relevanceScore = 100
         }
-        // Apply search type logic
-        else if (searchType === 'exact') {
-          // For exact search, only exact matches get high score
-          relevanceScore = nameLower === queryLower ? 100 : 0
+        // Starts with query gets high score
+        else if (nameLower.startsWith(queryLower)) {
+          relevanceScore = 90
         }
-        else if (searchType === 'starts_with') {
-          // For starts with search, prioritize games that start with the query
-          if (nameLower.startsWith(queryLower)) {
-            relevanceScore = 90
-          } else if (nameLower.includes(queryLower)) {
-            relevanceScore = 60
-          } else {
-            relevanceScore = 20
-          }
+        // Contains query gets high score (this is what we want!)
+        else if (nameLower.includes(queryLower)) {
+          relevanceScore = 85
         }
-        else { // searchType === 'contains'
-          // For contains search, prioritize contains matches
-          if (nameLower.startsWith(queryLower)) {
-            relevanceScore = 90
-          } else if (nameLower.includes(queryLower)) {
-            relevanceScore = 85
-          } else if (new RegExp(`\\b${queryLower}\\b`).test(nameLower)) {
-            relevanceScore = 70
-          } else {
-            relevanceScore = 30
-          }
+        // Word boundary match gets medium-high score
+        else if (new RegExp(`\\b${queryLower}\\b`).test(nameLower)) {
+          relevanceScore = 70
+        }
+        // Partial match gets medium score
+        else {
+          relevanceScore = 30
         }
 
         results.push({
