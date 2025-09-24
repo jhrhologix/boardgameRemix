@@ -14,6 +14,7 @@ export default function Home() {
   ]
   
   // Production deployment ready - force refresh - Redirect loop fix v2
+  // Preview deployment trigger - setting up auto-deployment hooks
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
