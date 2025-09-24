@@ -1,21 +1,32 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 // Configure Cloudinary with environment variables
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-const apiKey = process.env.CLOUDINARY_API_KEY
-const apiSecret = process.env.CLOUDINARY_API_SECRET
+// Use CLOUDINARY_URL format: cloudinary://api_key:api_secret@cloud_name
+const cloudinaryUrl = process.env.CLOUDINARY_URL
 
-if (!cloudName || !apiKey) {
-  throw new Error('Missing required Cloudinary environment variables. Please check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY')
+if (!cloudinaryUrl) {
+  throw new Error('Missing required Cloudinary environment variable: CLOUDINARY_URL')
 }
 
-// For unsigned uploads, we only need cloud_name and api_key
-// The api_secret is only needed for signed uploads
+// Parse the CLOUDINARY_URL to extract credentials
+const urlMatch = cloudinaryUrl.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/)
+if (!urlMatch) {
+  throw new Error('Invalid CLOUDINARY_URL format. Expected: cloudinary://api_key:api_secret@cloud_name')
+}
+
+const [, apiKey, apiSecret, cloudName] = urlMatch
+
+console.log('Cloudinary config parsed:', {
+  cloudName,
+  apiKey: apiKey.substring(0, 8) + '...', // Only show first 8 chars for security
+  hasApiSecret: !!apiSecret
+})
+
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: cloudName,
   api_key: apiKey,
-  // Only include api_secret if it's available (for signed uploads)
-  ...(apiSecret && { api_secret: apiSecret })
+  api_secret: apiSecret
 })
 
 export { cloudinary }
