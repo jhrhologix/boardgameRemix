@@ -62,9 +62,9 @@ export default function SetupImageUpload({
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    // Require description before upload
+    // Require description before upload - make it very clear
     if (!description.trim()) {
-      alert('Please enter a description for the setup image before uploading.')
+      alert('❌ DESCRIPTION REQUIRED: You must enter a description for the setup image before uploading. This helps other users understand what the image shows.')
       return
     }
 
@@ -109,6 +109,18 @@ export default function SetupImageUpload({
   const handleRemoveImage = async (imageIndex: number) => {
     const imageToRemove = images[imageIndex]
     
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `🗑️ DELETE IMAGE CONFIRMATION\n\n` +
+      `Are you sure you want to delete this image?\n\n` +
+      `Description: "${imageToRemove.description || 'No description'}"\n\n` +
+      `This action cannot be undone and the image will be permanently removed from Cloudinary.`
+    )
+    
+    if (!confirmed) {
+      return
+    }
+    
     try {
       // Delete from Cloudinary via our API
       const response = await fetch(`/api/upload-setup-image?publicId=${imageToRemove.publicId}`, {
@@ -133,47 +145,29 @@ export default function SetupImageUpload({
     
     if (!currentImage) return
 
-    const newOrder = direction === 'up' 
-      ? currentImage.imageOrder - 1 
-      : currentImage.imageOrder + 1
-
-    // Find the image that should be swapped
-    const targetImage = sortedImages.find(img => img.imageOrder === newOrder)
-    
-    if (!targetImage) return
-
     try {
-      // Rename both images to swap their order
-      const [currentResult, targetResult] = await Promise.all([
-        fetch('/api/rename-setup-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            oldPublicId: currentImage.publicId,
-            newOrder: newOrder,
-            newDescription: currentImage.description
-          })
-        }),
-        fetch('/api/rename-setup-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            oldPublicId: targetImage.publicId,
-            newOrder: currentImage.imageOrder,
-            newDescription: targetImage.description
-          })
+      // Use the new move up/down API endpoints
+      const endpoint = direction === 'up' ? '/api/move-image-up' : '/api/move-image-down'
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          publicId: currentImage.publicId
         })
-      ])
+      })
 
-      if (!currentResult.ok || !targetResult.ok) {
-        throw new Error('Failed to reorder images')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to reorder image')
       }
 
       // Refresh images from Cloudinary
       await loadImages()
     } catch (error) {
       console.error('Reorder error:', error)
-      alert('Failed to reorder images. Please try again.')
+      alert(`Failed to move image ${direction}. Please try again.`)
     }
   }
 
@@ -262,18 +256,19 @@ export default function SetupImageUpload({
               {/* Description Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-900">
-                  Image Description (Optional)
+                  Image Description <span className="text-red-500">* REQUIRED</span>
                 </label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe this setup image..."
+                  placeholder="Describe what this setup image shows (e.g., 'Game board setup with cards', 'Player pieces arranged', etc.)"
                   maxLength={255}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-red-300 rounded-md text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
                 />
-                <p className="text-xs text-gray-500">
-                  {description.length}/255 characters
+                <p className="text-xs text-red-600">
+                  {description.length}/255 characters - Description is required to upload images
                 </p>
               </div>
 

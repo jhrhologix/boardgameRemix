@@ -18,8 +18,16 @@ export async function uploadRemixSetupImage(
   mimeType: string = 'image/jpeg'
 ): Promise<{ url: string; publicId: string }> {
   try {
-    // Simple naming convention: {remixId}_{order} - easy to filter and reorder
-    const filename = `${remixId}_${imageOrder}`
+    // New naming convention: {remixId}_{yyyymmddhhmmss} with order metadata
+    const now = new Date()
+    const timestamp = now.getFullYear().toString() +
+      (now.getMonth() + 1).toString().padStart(2, '0') +
+      now.getDate().toString().padStart(2, '0') +
+      now.getHours().toString().padStart(2, '0') +
+      now.getMinutes().toString().padStart(2, '0') +
+      now.getSeconds().toString().padStart(2, '0')
+    
+    const filename = `${remixId}_${timestamp}`
     
     // Upload to Cloudinary with specific folder structure
     const result = await cloudinary.uploader.upload(
@@ -33,7 +41,8 @@ export async function uploadRemixSetupImage(
         fetch_format: 'auto',
         context: {
           alt: description.substring(0, 255), // Max 255 chars for description
-          caption: description.substring(0, 255)
+          caption: description.substring(0, 255),
+          order: imageOrder.toString() // Store order as metadata
         },
         transformation: [
           { width: 1200, height: 800, crop: 'fill', gravity: 'auto' },
@@ -100,37 +109,36 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
     // Search for images with filename pattern: {remixId}_*
     const result = await cloudinary.search
       .expression(`filename:${remixId}_*`)
-      .sort_by([['public_id', 'asc']]) // Sort by public_id to maintain order
       .max_results(100)
       .execute()
 
-    return result.resources.map(resource => {
-      // Extract order from filename: {remixId}_{order}
-      const filename = resource.public_id.split('/').pop() || ''
-      const parts = filename.split('_')
-      const imageOrder = parts.length >= 2 ? parseInt(parts[1]) || 0 : 0
-      
-      // Get description from context (alt or caption)
-      const description = resource.context?.alt || resource.context?.caption || ''
-      
-      // Generate thumbnail URL
-      const thumbnailUrl = cloudinary.url(resource.public_id, {
-        width: 200,
-        height: 200,
-        crop: 'fill',
-        quality: 'auto',
-        fetch_format: 'auto'
-      })
+    return result.resources
+      .map((resource: any) => {
+        // Get order from context metadata (stored during upload)
+        const imageOrder = parseInt(resource.context?.order || '0') || 0
+        
+        // Get description from context (alt or caption)
+        const description = resource.context?.alt || resource.context?.caption || ''
+        
+        // Generate thumbnail URL
+        const thumbnailUrl = cloudinary.url(resource.public_id, {
+          width: 200,
+          height: 200,
+          crop: 'fill',
+          quality: 'auto',
+          fetch_format: 'auto'
+        })
 
-      return {
-        publicId: resource.public_id,
-        url: resource.secure_url,
-        thumbnailUrl,
-        imageOrder,
-        description,
-        createdAt: resource.created_at
-      }
-    })
+        return {
+          publicId: resource.public_id,
+          url: resource.secure_url,
+          thumbnailUrl,
+          imageOrder,
+          description,
+          createdAt: resource.created_at
+        }
+      })
+      .sort((a: any, b: any) => a.imageOrder - b.imageOrder) // Sort by order metadata
   } catch (error) {
     console.error('Error searching Cloudinary images:', error)
     return []
@@ -180,6 +188,63 @@ export async function renameRemixSetupImage(
   } catch (error) {
     console.error('Error renaming Cloudinary image:', error)
     throw new Error('Failed to rename image')
+  }
+}
+
+// Move image up in order (decrease order number)
+export async function moveImageUp(publicId: string): Promise<void> {
+  try {
+    // Get current image data
+    const result = await cloudinary.search
+      .expression(`public_id:${publicId}`)
+      .execute()
+    
+    if (result.resources.length === 0) {
+      throw new Error('Image not found')
+    }
+    
+    const currentOrder = parseInt(result.resources[0].context?.order || '0')
+    if (currentOrder <= 1) {
+      throw new Error('Image is already at the top')
+    }
+    
+    // Update order metadata
+    await cloudinary.uploader.explicit(publicId, {
+      context: {
+        ...result.resources[0].context,
+        order: (currentOrder - 1).toString()
+      }
+    })
+  } catch (error) {
+    console.error('Error moving image up:', error)
+    throw new Error('Failed to move image up')
+  }
+}
+
+// Move image down in order (increase order number)
+export async function moveImageDown(publicId: string): Promise<void> {
+  try {
+    // Get current image data
+    const result = await cloudinary.search
+      .expression(`public_id:${publicId}`)
+      .execute()
+    
+    if (result.resources.length === 0) {
+      throw new Error('Image not found')
+    }
+    
+    const currentOrder = parseInt(result.resources[0].context?.order || '0')
+    
+    // Update order metadata
+    await cloudinary.uploader.explicit(publicId, {
+      context: {
+        ...result.resources[0].context,
+        order: (currentOrder + 1).toString()
+      }
+    })
+  } catch (error) {
+    console.error('Error moving image down:', error)
+    throw new Error('Failed to move image down')
   }
 }
 

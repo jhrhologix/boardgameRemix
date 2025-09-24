@@ -3,6 +3,7 @@ import './globals.css'
 import { AuthProvider } from '@/lib/auth'
 import { NavBar } from '@/components/nav-bar'
 import { GoogleAnalytics } from '@/components/google-analytics'
+import DebugAuth from '@/components/debug-auth'
 
 export const metadata: Metadata = {
   title: {
@@ -118,6 +119,7 @@ export default function RootLayout({
           <main>
             {children}
           </main>
+          <DebugAuth />
         </AuthProvider>
       </body>
     </html>
