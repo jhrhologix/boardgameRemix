@@ -1,10 +1,21 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 // Configure Cloudinary with environment variables
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+const apiKey = process.env.CLOUDINARY_API_KEY
+const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+if (!cloudName) {
+  throw new Error('Missing required Cloudinary environment variable: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME')
+}
+
+// For unsigned uploads, we only need cloud_name and api_key
+// The api_secret is only needed for signed uploads
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '636325382282287',
-  api_key: process.env.CLOUDINARY_API_KEY || '282637517386974',
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: cloudName,
+  api_key: apiKey,
+  // Only include api_secret if it's available (for signed uploads)
+  ...(apiSecret && { api_secret: apiSecret })
 })
 
 export { cloudinary }
