@@ -45,8 +45,8 @@ export async function uploadRemixSetupImage(
           order: imageOrder.toString() // Store order as metadata
         },
         transformation: [
-          { width: 1200, height: 800, crop: 'fill', gravity: 'auto' },
-          { quality: 'auto', fetch_format: 'auto' }
+          { width: 1024, height: 1024, crop: 'limit', quality: 'auto' },
+          { fetch_format: 'auto' }
         ]
       }
     )

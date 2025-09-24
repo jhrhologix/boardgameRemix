@@ -58,6 +58,43 @@ export interface Database {
           created_at?: string
         }
       }
+      user_favorites: {
+        Row: {
+          user_id: string
+          remix_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          remix_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          remix_id?: string
+          created_at?: string
+        }
+      }
+      user_votes: {
+        Row: {
+          user_id: string
+          remix_id: string
+          vote_type: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          remix_id: string
+          vote_type: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          remix_id?: string
+          vote_type?: string
+          created_at?: string
+        }
+      }
       hashtags: {
         Row: {
           id: string

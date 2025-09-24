@@ -124,7 +124,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
 
         // Get favorite status
         const { data: favoriteData } = await supabase
-          .from('favorites')
+          .from('user_favorites')
           .select('id')
           .eq('user_id', user.id)
           .eq('remix_id', remix.id)

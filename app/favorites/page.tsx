@@ -72,7 +72,7 @@ export default function FavoritesPage() {
       try {
 
         const { data, error: fetchError } = await supabase
-          .from('favorites')
+          .from('user_favorites')
           .select(`
             remix_id,
             remix:remixes (

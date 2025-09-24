@@ -102,7 +102,7 @@ export async function toggleFavorite(formData: FormData) {
 
     // Check if already favorited
     const { data: existingFavorite, error: favoriteError } = await supabase
-      .from("favorites")
+      .from("user_favorites")
       .select("*")
       .eq("user_id", userId)
       .eq("remix_id", remixId)
@@ -116,7 +116,7 @@ export async function toggleFavorite(formData: FormData) {
     if (existingFavorite) {
       // Remove from favorites
       const { error: deleteError } = await supabase
-        .from("favorites")
+        .from("user_favorites")
         .delete()
         .eq("user_id", userId)
         .eq("remix_id", remixId)
@@ -128,7 +128,7 @@ export async function toggleFavorite(formData: FormData) {
     } else {
       // Add to favorites
       const { error: insertError } = await supabase
-        .from("favorites")
+        .from("user_favorites")
         .insert({
           remix_id: remixId,
           user_id: userId,
