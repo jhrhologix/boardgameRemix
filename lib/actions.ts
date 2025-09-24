@@ -162,7 +162,7 @@ export async function getFavoriteStatus(remixIds: string[]) {
     }
 
     const { data, error: favoritesError } = await supabase
-      .from('favorites')
+      .from('user_favorites')
       .select('remix_id')
       .eq('user_id', user.id)
       .in('remix_id', remixIds)

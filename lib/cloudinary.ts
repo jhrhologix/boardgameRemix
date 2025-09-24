@@ -168,9 +168,14 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
           fetch_format: 'auto'
         })
 
+        // Generate clean URL without metadata
+        const cleanUrl = cloudinary.url(resource.public_id, {
+          secure: true
+        })
+
         return {
           publicId: resource.public_id,
-          url: resource.secure_url,
+          url: cleanUrl,
           thumbnailUrl,
           imageOrder,
           description,
