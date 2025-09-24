@@ -4,12 +4,33 @@ import { uploadRemixSetupImage } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug cookies
+    const cookies = request.headers.get('cookie')
+    console.log('Upload API Cookies:', cookies ? 'Present' : 'Missing')
+    
     // Check authentication
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    // Debug authentication
+    console.log('Upload API Auth Debug:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      authError: authError?.message,
+      errorCode: authError?.status
+    })
+    
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.error('Upload API Auth Failed:', authError)
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        details: authError?.message || 'No user found',
+        debug: {
+          hasUser: !!user,
+          authError: authError?.message
+        }
+      }, { status: 401 })
     }
 
     // Parse form data

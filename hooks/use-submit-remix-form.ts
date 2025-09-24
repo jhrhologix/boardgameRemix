@@ -52,13 +52,15 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY !== 'your_site_key_here' &&
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY.length > 10
 
-  // Debug reCAPTCHA configuration
-  console.log('reCAPTCHA Debug:', {
-    hasKey: !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-    keyLength: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.length,
-    keyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 10),
-    hasValidKey: hasValidRecaptchaKey
-  })
+  // Debug reCAPTCHA configuration (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('reCAPTCHA Debug:', {
+      hasKey: !!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+      keyLength: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.length,
+      keyPrefix: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.substring(0, 10),
+      hasValidKey: hasValidRecaptchaKey
+    })
+  }
 
   // Load existing remix data if editing
   useEffect(() => {
