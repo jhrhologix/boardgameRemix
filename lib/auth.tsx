@@ -22,9 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // In development, completely skip auth to avoid rate limits
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('Development mode: Skipping auth checks to avoid rate limits')
+    // Only skip auth if explicitly set in environment variables
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('Skipping auth checks as requested by environment variable')
       setUser(null)
       setLoading(false)
       return
