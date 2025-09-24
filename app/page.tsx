@@ -13,7 +13,7 @@ export default function Home() {
     generateOrganizationStructuredData()
   ]
   
-  // Production deployment ready - force refresh
+  // Production deployment ready - force refresh - Redirect loop fix v2
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">

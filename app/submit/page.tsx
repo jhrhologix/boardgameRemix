@@ -1,6 +1,6 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import SubmitRemixForm from "@/components/submit-remix-form"
+import SubmitPageWrapper from "@/components/submit-page-wrapper"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
@@ -18,8 +18,9 @@ export default async function SubmitPage({
   const params = await searchParams
   const editId = params?.edit
   
-  // Use getUser() for security as recommended by Supabase
-  const { data: { user }, error } = await supabase.auth.getUser()
+  // Use getSession() instead of getUser() for better reliability
+  const { data: { session }, error } = await supabase.auth.getSession()
+  const user = session?.user
 
   if (error || !user) {
     redirect("/auth?callbackUrl=/submit")
@@ -47,7 +48,7 @@ export default async function SubmitPage({
             {editId ? "Edit Game Remix" : "Submit a Game Remix"}
           </h1>
           <div className="bg-white rounded-lg shadow-md p-6">
-            <SubmitRemixForm 
+            <SubmitPageWrapper 
               userId={user.id} 
               remixId={editId}
             />
