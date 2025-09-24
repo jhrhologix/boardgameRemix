@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { X, Upload, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Edit2 } from 'lucide-react'
 import Image from 'next/image'
+import { supabase } from '@/lib/supabase'
 
 interface SetupImage {
   publicId: string
@@ -78,8 +79,16 @@ export default function SetupImageUpload({
         formData.append('imageOrder', (images.length + index + 1).toString())
         formData.append('description', description.trim())
 
+        // Get the auth token from Supabase
+        const { data: { session } } = await supabase.auth.getSession()
+        const authToken = session?.access_token
+
         const response = await fetch('/api/upload-setup-image', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            ...(authToken ? { 'X-Supabase-Auth': authToken } : {})
+          },
           body: formData
         })
 

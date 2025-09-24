@@ -330,13 +330,7 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
             onChange={(token) => updateFormState({ captchaToken: token })}
             onErrored={(error) => {
               console.error('reCAPTCHA Error:', error)
-              // Don't block form submission if reCAPTCHA fails in development
-              if (process.env.NODE_ENV === 'development') {
-                console.warn('reCAPTCHA failed in development mode, continuing without it')
-                updateFormState({ captchaError: null })
-              } else {
-                updateFormState({ captchaError: 'reCAPTCHA failed to load. Please refresh the page.' })
-              }
+              updateFormState({ captchaError: 'reCAPTCHA failed to load. Please refresh the page.' })
             }}
             onExpired={() => {
               console.log('reCAPTCHA expired')

@@ -4,13 +4,32 @@ import { uploadRemixSetupImage } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
   try {
-    // Debug cookies
+    // Debug cookies and headers
     const cookies = request.headers.get('cookie')
-    console.log('Upload API Cookies:', cookies ? 'Present' : 'Missing')
+    const authHeader = request.headers.get('authorization')
+    const supabaseAuth = request.headers.get('x-supabase-auth')
+    console.log('Upload API Headers:', {
+      cookies: cookies ? 'Present' : 'Missing',
+      authHeader: authHeader ? 'Present' : 'Missing',
+      supabaseAuth: supabaseAuth ? 'Present' : 'Missing'
+    })
     
     // Check authentication
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    // If cookie-based auth fails, try token-based auth
+    if (authError || !user) {
+      console.log('Cookie auth failed, trying token auth...')
+      if (supabaseAuth) {
+        const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(supabaseAuth)
+        if (tokenUser && !tokenError) {
+          console.log('Token auth succeeded')
+          user = tokenUser
+          authError = null
+        }
+      }
+    }
     
     // Debug authentication
     console.log('Upload API Auth Debug:', {
