@@ -24,6 +24,19 @@ export default function SubmitPageWrapper({ userId, remixId }: SubmitPageWrapper
     }
   }, [user, loading, router])
 
+  // If we have a userId from server but no client user, wait a bit for hydration
+  if (userId && !user && !loading) {
+    console.log('Server has user but client does not, waiting for hydration...')
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35] mx-auto mb-4"></div>
+          <p className="text-[#004E89]">Syncing authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
   // Always show loading while auth state is being determined
   if (loading) {
     return (

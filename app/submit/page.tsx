@@ -18,20 +18,22 @@ export default async function SubmitPage({
   const params = await searchParams
   const editId = params?.edit
   
-  // Use getSession() for better reliability in production
-  const { data: { session }, error } = await supabase.auth.getSession()
-  const user = session?.user
+  // Try to get user, but don't redirect on server side
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // Log the auth state for debugging
+  console.log('Server-side auth state:', { 
+    hasUser: !!user, 
+    error,
+    userId: user?.id,
+    userEmail: user?.email
+  })
 
-  // If no session or user, redirect to auth
-  if (!session || !user || error) {
-    console.log('Server-side auth check failed:', { session: !!session, user: !!user, error })
-    redirect("/auth?callbackUrl=/submit")
-  }
+  // Pass the user to the client component, let it handle the redirect
+  const userId = user?.id || ''
 
-  console.log('Server-side auth check passed:', { userId: user.id, email: user.email })
-
-  // If editing, verify the user owns the remix
-  if (editId) {
+  // If editing, verify the user owns the remix (only if user exists)
+  if (editId && user) {
     const { data: remix } = await supabase
       .from('remixes')
       .select('user_id')
@@ -53,7 +55,7 @@ export default async function SubmitPage({
           </h1>
           <div className="bg-white rounded-lg shadow-md p-6">
             <SubmitPageWrapper 
-              userId={user.id} 
+              userId={userId} 
               remixId={editId}
             />
           </div>
