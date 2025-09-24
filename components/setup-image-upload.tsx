@@ -39,6 +39,15 @@ export default function SetupImageUpload({
   const [editDescription, setEditDescription] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Debug component state
+  console.log('SetupImageUpload render:', {
+    remixId,
+    description,
+    uploading,
+    imagesCount: images.length,
+    hasFileInput: !!fileInputRef.current
+  })
+
   // Load images from Cloudinary
   const loadImages = async () => {
     try {
@@ -61,14 +70,24 @@ export default function SetupImageUpload({
   }, [remixId]) // Only depend on remixId to keep array size consistent
 
   const handleFileSelect = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
+    console.log('handleFileSelect called with files:', files)
+    
+    if (!files || files.length === 0) {
+      console.log('No files selected')
+      return
+    }
+
+    console.log('Files selected:', files.length, 'files')
+    console.log('Description:', description)
 
     // Require description before upload - make it very clear
     if (!description.trim()) {
+      console.log('No description provided, showing alert')
       alert('❌ DESCRIPTION REQUIRED: You must enter a description for the setup image before uploading. This helps other users understand what the image shows.')
       return
     }
 
+    console.log('Starting upload process...')
     setUploading(true)
     
     try {
@@ -294,7 +313,11 @@ export default function SetupImageUpload({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      console.log('Upload button clicked')
+                      console.log('fileInputRef.current:', fileInputRef.current)
+                      fileInputRef.current?.click()
+                    }}
                     disabled={uploading}
                     className="mt-2"
                   >
