@@ -167,7 +167,7 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     if (!data.difficulty) return "Difficulty level is required"
     if (!data.rules.trim()) return "Game rules are required"
     if (!data.setupInstructions.trim()) return "Setup instructions are required"
-    if (data.selectedGames.length < 2) return "Please select at least 2 board games for your remix"
+    if (data.selectedGames.length < 1) return "Please select at least 1 board game for your remix"
     if (data.maxPlayers && isNaN(Number(data.maxPlayers))) return "Maximum players must be a number"
     
     if (hasValidRecaptchaKey && !formState.captchaToken) {

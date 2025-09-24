@@ -15,6 +15,7 @@ export interface BGGGame {
   playingTime?: number
   bggUrl: string
   types?: GameType[]
+  relevanceScore?: number // For internal sorting
 }
 
 // Helper function to determine game types based on BGG categories and mechanics
@@ -140,7 +141,7 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
     if (!item) return null
 
     const name = item.getElementsByTagName("name")[0]?.getAttribute("value") || ""
-    const yearPublished = item.getElementsByTagName("yearpublished")[0]?.getAttribute("value")
+    const yearPublished = item.getElementsByTagName("yearpublished")[0]?.getAttribute("value") || undefined
     const image = item.getElementsByTagName("image")[0]?.textContent || ""
     const thumbnail = item.getElementsByTagName("thumbnail")[0]?.textContent || ""
     const description = item.getElementsByTagName("description")[0]?.textContent || ""
@@ -189,8 +190,10 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
 export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
   try {
     console.log('Searching BGG for:', query)
+    // Make search case-insensitive and use contains matching
+    const searchQuery = query.toLowerCase().trim()
     const response = await fetch(
-      `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`,
+      `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(searchQuery)}&type=boardgame&exact=0`,
       {
         headers: {
           'Accept': 'application/xml',
@@ -237,7 +240,7 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
 
     const results: BGGGame[] = []
 
-    for (let i = 0; i < items.length && i < 10; i++) {
+    for (let i = 0; i < items.length && i < 20; i++) {
       try {
         const item = items[i]
         const id = item.getAttribute("id")
@@ -259,18 +262,48 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
         }
 
         const yearNodes = item.getElementsByTagName("yearpublished")
-        const yearPublished = yearNodes.length > 0 ? yearNodes[0].getAttribute("value") || "" : ""
+        const yearPublished = yearNodes.length > 0 ? yearNodes[0].getAttribute("value") || undefined : undefined
+
+        // Calculate relevance score for better sorting (prioritize contains matches)
+        const nameLower = name.toLowerCase()
+        const queryLower = searchQuery.toLowerCase()
+        let relevanceScore = 0
+        
+        // Exact match gets highest score
+        if (nameLower === queryLower) {
+          relevanceScore = 100
+        }
+        // Starts with query gets high score
+        else if (nameLower.startsWith(queryLower)) {
+          relevanceScore = 90
+        }
+        // Contains query gets high score (this is what we want!)
+        else if (nameLower.includes(queryLower)) {
+          relevanceScore = 85
+        }
+        // Word boundary match gets medium-high score
+        else if (new RegExp(`\\b${queryLower}\\b`).test(nameLower)) {
+          relevanceScore = 70
+        }
+        // Partial match gets medium score
+        else {
+          relevanceScore = 30
+        }
 
         results.push({
           id,
           name,
           yearPublished,
           bggUrl: `https://boardgamegeek.com/boardgame/${id}`,
+          relevanceScore // Add for sorting
         })
       } catch (itemError) {
         console.error('Error processing item:', itemError)
       }
     }
+
+    // Sort by relevance score (exact matches first)
+    results.sort((a, b) => (b as any).relevanceScore - (a as any).relevanceScore)
 
     console.log('Processed BGG results:', results)
     return results
