@@ -63,7 +63,7 @@ export default function SubmitPageWrapper({ userId, remixId }: SubmitPageWrapper
 
   return (
     <>
-      <SubmitRemixForm userId={userId} remixId={remixId} />
+      <SubmitRemixForm userId={user.id} remixId={remixId} />
       <DebugAuth />
     </>
   )

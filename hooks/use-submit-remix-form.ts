@@ -209,6 +209,12 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
       return false
     }
 
+    // Validate userId before proceeding
+    if (!userId || userId.trim() === '') {
+      setFormState(prev => ({ ...prev, error: "User ID is missing. Please refresh the page and try again." }))
+      return false
+    }
+
     setFormState(prev => ({ ...prev, isSubmitting: true, error: null }))
 
     try {
@@ -217,6 +223,11 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
       
       if (sessionError || !user) {
         throw new Error("Authentication error. Please try logging in again.")
+      }
+
+      // Double-check that the user ID matches
+      if (user.id !== userId) {
+        throw new Error("User ID mismatch. Please refresh the page and try again.")
       }
 
       const remixData = {
