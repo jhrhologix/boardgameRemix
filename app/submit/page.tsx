@@ -18,11 +18,12 @@ export default async function SubmitPage({
   const params = await searchParams
   const editId = params?.edit
   
-  // Use getSession() instead of getUser() for better reliability
+  // Use getSession() for better reliability in production
   const { data: { session }, error } = await supabase.auth.getSession()
   const user = session?.user
 
-  if (error || !user) {
+  // If no session or user, redirect to auth
+  if (!session || !user || error) {
     redirect("/auth?callbackUrl=/submit")
   }
 
