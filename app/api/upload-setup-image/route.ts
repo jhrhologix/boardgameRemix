@@ -118,6 +118,14 @@ export async function POST(request: NextRequest) {
       bufferSize: buffer.length
     })
 
+    // Check Cloudinary environment variables
+    console.log('Cloudinary env check:', {
+      hasCloudName: !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+      hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    })
+
     // Upload to Cloudinary with proper naming convention
     const uploadResult = await uploadRemixSetupImage(
       buffer,

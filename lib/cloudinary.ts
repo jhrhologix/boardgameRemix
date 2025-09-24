@@ -5,8 +5,8 @@ const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 const apiKey = process.env.CLOUDINARY_API_KEY
 const apiSecret = process.env.CLOUDINARY_API_SECRET
 
-if (!cloudName) {
-  throw new Error('Missing required Cloudinary environment variable: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME')
+if (!cloudName || !apiKey) {
+  throw new Error('Missing required Cloudinary environment variables. Please check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY')
 }
 
 // For unsigned uploads, we only need cloud_name and api_key
