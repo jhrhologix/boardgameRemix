@@ -328,8 +328,8 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
             ref={recaptchaRef}
             sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
             onChange={(token) => updateFormState({ captchaToken: token })}
-            onErrored={(error) => {
-              console.error('reCAPTCHA Error:', error)
+            onErrored={() => {
+              console.error('reCAPTCHA Error')
               updateFormState({ captchaError: 'reCAPTCHA failed to load. Please refresh the page.' })
             }}
             onExpired={() => {
@@ -345,12 +345,12 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
 
       {/* Moderation Status */}
       {formState.moderationStatus && (
-        <Alert className={formState.moderationStatus === 'approved' ? 'border-green-500 bg-green-50' : 
-                          formState.moderationStatus === 'rejected' ? 'border-red-500 bg-red-50' :
-                          formState.moderationStatus === 'escalated' ? 'border-orange-500 bg-orange-50' :
-                          'border-yellow-500 bg-yellow-50'}>
+        <Alert className={formState.moderationStatus === 'approved' ? 'border-green-500 bg-green-50 text-green-800' : 
+                          formState.moderationStatus === 'rejected' ? 'border-red-500 bg-red-50 text-red-800' :
+                          formState.moderationStatus === 'escalated' ? 'border-orange-500 bg-orange-50 text-orange-800' :
+                          'border-yellow-500 bg-yellow-50 text-yellow-800'}>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+          <AlertDescription className="text-inherit">
             {formState.moderationMessage}
           </AlertDescription>
         </Alert>
