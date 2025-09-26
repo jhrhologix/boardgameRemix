@@ -113,24 +113,32 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         setIsOwner(user.id === remix.user_id)
 
         // Get user's vote
-        const { data: voteData } = await supabase
+        const { data: voteData, error: voteError } = await supabase
           .from('user_votes')
           .select('vote_type')
           .eq('user_id', user.id)
           .eq('remix_id', remix.id)
-          .single()
+          .maybeSingle()
 
-        setUserVote(voteData?.vote_type)
+        if (voteError) {
+          console.error('Error fetching user vote:', voteError)
+        } else {
+          setUserVote(voteData?.vote_type)
+        }
 
         // Get favorite status
-        const { data: favoriteData } = await supabase
+        const { data: favoriteData, error: favoriteError } = await supabase
           .from('user_favorites')
           .select('id')
           .eq('user_id', user.id)
           .eq('remix_id', remix.id)
-          .single()
+          .maybeSingle()
 
-        setIsFavorited(!!favoriteData)
+        if (favoriteError) {
+          console.error('Error fetching favorite status:', favoriteError)
+        } else {
+          setIsFavorited(!!favoriteData)
+        }
       } catch (err) {
         console.error('Error loading user data:', err)
         setError(err instanceof Error ? err.message : 'Failed to load user data')

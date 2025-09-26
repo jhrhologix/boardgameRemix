@@ -153,6 +153,15 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
 
     return result.resources
       .map((resource: any) => {
+        // Debug: Log the context metadata
+        console.log('Resource context metadata:', {
+          publicId: resource.public_id,
+          context: resource.context,
+          order: resource.context?.order,
+          alt: resource.context?.alt,
+          caption: resource.context?.caption
+        })
+        
         // Get order from context metadata (stored during upload)
         const imageOrder = parseInt(resource.context?.order || '0') || 0
         
