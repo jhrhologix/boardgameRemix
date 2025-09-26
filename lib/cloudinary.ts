@@ -188,6 +188,8 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
         const description = resource.context?.alt || resource.context?.caption || ''
         
         console.log('Extracted metadata:', { imageOrder, description })
+        console.log('Context data:', resource.context)
+        console.log('Resource public_id:', resource.public_id)
         
         // Generate clean thumbnail URL
         const thumbnailUrl = cloudinary.url(resource.public_id, {
@@ -209,6 +211,13 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
           thumbnailUrl,
           cleanUrl,
           originalSecureUrl: resource.secure_url
+        })
+        console.log('Final image object:', {
+          publicId: resource.public_id,
+          url: cleanUrl,
+          thumbnailUrl,
+          imageOrder,
+          description
         })
 
         return {
