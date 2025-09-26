@@ -128,11 +128,25 @@ export async function createRemix(
         throw new Error('Failed to create hashtags')
       }
 
-      // Then associate them with the remix
-      const remixHashtagInserts = hashtags.map(hashtag => ({
-        remix_id: newRemix.id,
-        hashtag_name: hashtag.name.toLowerCase()
-      }))
+      // Then associate them with the remix - get hashtag IDs first
+      const remixHashtagInserts = []
+      for (const hashtag of hashtags) {
+        const { data: hashtagData, error: hashtagError } = await supabase
+          .from('hashtags')
+          .select('id')
+          .eq('name', hashtag.name.toLowerCase())
+          .single()
+
+        if (hashtagError || !hashtagData) {
+          console.error('Error finding hashtag:', hashtagError)
+          throw new Error(`Failed to find hashtag: ${hashtag.name}`)
+        }
+
+        remixHashtagInserts.push({
+          remix_id: newRemix.id,
+          hashtag_id: hashtagData.id
+        })
+      }
 
       const { error: remixHashtagsError } = await supabase
         .from('remix_hashtags')
@@ -289,11 +303,25 @@ export async function updateRemix(
         throw new Error('Failed to create hashtags')
       }
 
-      // Then associate them with the remix
-      const remixHashtagInserts = hashtags.map(hashtag => ({
-        remix_id: remixId,
-        hashtag_name: hashtag.name.toLowerCase()
-      }))
+      // Then associate them with the remix - get hashtag IDs first
+      const remixHashtagInserts = []
+      for (const hashtag of hashtags) {
+        const { data: hashtagData, error: hashtagError } = await supabase
+          .from('hashtags')
+          .select('id')
+          .eq('name', hashtag.name.toLowerCase())
+          .single()
+
+        if (hashtagError || !hashtagData) {
+          console.error('Error finding hashtag:', hashtagError)
+          throw new Error(`Failed to find hashtag: ${hashtag.name}`)
+        }
+
+        remixHashtagInserts.push({
+          remix_id: remixId,
+          hashtag_id: hashtagData.id
+        })
+      }
 
       const { error: remixHashtagsError } = await supabase
         .from('remix_hashtags')
