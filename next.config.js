@@ -17,6 +17,12 @@ const nextConfig = {
         port: '3000',
         pathname: '/api/bgg-image/**',
       },
+      // Allow Cloudinary images
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dmp6byebm/image/upload/**',
+      },
     ],
     unoptimized: false, // Enable optimization for our API images
     dangerouslyAllowSVG: true,
