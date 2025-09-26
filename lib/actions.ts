@@ -12,16 +12,33 @@ export async function voteOnRemix(formData: FormData) {
   console.log('voteOnRemix called:', { remixId, voteType })
 
   try {
+    // Debug: Check what cookies are available
+    const cookieStore = await cookies()
+    const supabaseCookies = cookieStore.getAll().filter(cookie => 
+      cookie.name.includes('supabase') || cookie.name.includes('sb-')
+    )
+    console.log('Supabase cookies found:', supabaseCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+
     // Try to get the session first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    console.log('Session check:', { session: !!session, sessionError })
+    console.log('Session check:', { 
+      session: !!session, 
+      sessionError,
+      sessionUser: session?.user?.id,
+      sessionAccessToken: !!session?.access_token
+    })
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
 
-    console.log('User check:', { user: !!user, userError })
+    console.log('User check:', { 
+      user: !!user, 
+      userError,
+      userId: user?.id,
+      userEmail: user?.email
+    })
 
     if (userError || !user) {
       console.error("Authentication error:", userError)
@@ -107,16 +124,33 @@ export async function toggleFavorite(formData: FormData) {
 
     console.log('toggleFavorite called:', { remixId })
 
+    // Debug: Check what cookies are available
+    const cookieStore = await cookies()
+    const supabaseCookies = cookieStore.getAll().filter(cookie => 
+      cookie.name.includes('supabase') || cookie.name.includes('sb-')
+    )
+    console.log('Supabase cookies found:', supabaseCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+
     // Try to get the session first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    console.log('Session check:', { session: !!session, sessionError })
+    console.log('Session check:', { 
+      session: !!session, 
+      sessionError,
+      sessionUser: session?.user?.id,
+      sessionAccessToken: !!session?.access_token
+    })
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
 
-    console.log('User check:', { user: !!user, userError })
+    console.log('User check:', { 
+      user: !!user, 
+      userError,
+      userId: user?.id,
+      userEmail: user?.email
+    })
 
     if (userError || !user) {
       console.error("Authentication error:", userError)

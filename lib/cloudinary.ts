@@ -62,7 +62,7 @@ export async function uploadRemixSetupImage(
       folder: 'remix.games',
       public_id: filename,
       upload_preset: 'remix.games', // Use your upload preset
-      resource_type: 'auto',
+      resource_type: 'auto' as const,
       quality: 'auto',
       fetch_format: 'auto',
       context: {
