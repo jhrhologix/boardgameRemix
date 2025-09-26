@@ -248,19 +248,38 @@ export default function SetupImageUpload({
     }
 
     try {
-      const response = await fetch('/api/rename-setup-image', {
+      // Get auth token for API call
+      const { data: { session } } = await supabase.auth.getSession()
+      const authToken = session?.access_token
+      
+      if (!authToken) {
+        console.error('No auth token available')
+        alert('Authentication required')
+        return
+      }
+
+      const response = await fetch('/api/update-image-metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'X-Supabase-Auth': authToken
+        },
         body: JSON.stringify({
-          oldPublicId: image.publicId,
-          newOrder: image.imageOrder,
-          newDescription: editDescription.trim()
+          publicId: image.publicId,
+          description: editDescription.trim(),
+          imageOrder: image.imageOrder
         })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update description')
+        const errorData = await response.json()
+        console.error('API error:', errorData)
+        throw new Error(`Failed to update description: ${errorData.error}`)
       }
+
+      const result = await response.json()
+      console.log('Description updated successfully:', result)
 
       // Refresh images from Cloudinary
       await loadImages()
