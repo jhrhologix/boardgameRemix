@@ -16,6 +16,10 @@ export interface CreateRemixData {
 
 export interface RemixGameData {
   bgg_game_id: string
+  name?: string
+  year_published?: number
+  image_url?: string
+  bgg_url?: string
 }
 
 export interface RemixHashtagData {
@@ -38,7 +42,15 @@ export async function createRemix(
   // Verify user is authenticated
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
+  console.log('CreateRemix server action auth check:', {
+    hasUser: !!user,
+    userId: user?.id,
+    expectedUserId: userId,
+    authError: authError?.message
+  })
+  
   if (authError || !user || user.id !== userId) {
+    console.error('CreateRemix authentication failed:', { authError, user, expectedUserId: userId })
     throw new Error('Authentication error. Please try logging in again.')
   }
 
@@ -64,6 +76,27 @@ export async function createRemix(
 
     // Handle games relationships
     if (games.length > 0) {
+      // First, ensure all BGG games exist in the bgg_games table
+      for (const game of games) {
+        const { error: bggGameError } = await supabase
+          .from('bgg_games')
+          .upsert({
+            bgg_id: game.bgg_game_id,
+            name: game.name || `Game ${game.bgg_game_id}`,
+            year_published: game.year_published,
+            image_url: game.image_url,
+            bgg_url: game.bgg_url || `https://boardgamegeek.com/boardgame/${game.bgg_game_id}`
+          }, { 
+            onConflict: 'bgg_id' 
+          })
+
+        if (bggGameError) {
+          console.error('Error upserting BGG game:', bggGameError)
+          throw new Error(`Failed to save BGG game: ${bggGameError.message}`)
+        }
+      }
+
+      // Then create the relationships
       const gameInserts = games.map(game => ({
         remix_id: newRemix.id,
         bgg_game_id: game.bgg_game_id
@@ -164,7 +197,15 @@ export async function updateRemix(
   // Verify user is authenticated
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
+  console.log('UpdateRemix server action auth check:', {
+    hasUser: !!user,
+    userId: user?.id,
+    expectedUserId: userId,
+    authError: authError?.message
+  })
+  
   if (authError || !user || user.id !== userId) {
+    console.error('UpdateRemix authentication failed:', { authError, user, expectedUserId: userId })
     throw new Error('Authentication error. Please try logging in again.')
   }
 
@@ -196,6 +237,27 @@ export async function updateRemix(
 
     // Handle games relationships
     if (games.length > 0) {
+      // First, ensure all BGG games exist in the bgg_games table
+      for (const game of games) {
+        const { error: bggGameError } = await supabase
+          .from('bgg_games')
+          .upsert({
+            bgg_id: game.bgg_game_id,
+            name: game.name || `Game ${game.bgg_game_id}`,
+            year_published: game.year_published,
+            image_url: game.image_url,
+            bgg_url: game.bgg_url || `https://boardgamegeek.com/boardgame/${game.bgg_game_id}`
+          }, { 
+            onConflict: 'bgg_id' 
+          })
+
+        if (bggGameError) {
+          console.error('Error upserting BGG game:', bggGameError)
+          throw new Error(`Failed to save BGG game: ${bggGameError.message}`)
+        }
+      }
+
+      // Then create the relationships
       const gameInserts = games.map(game => ({
         remix_id: remixId,
         bgg_game_id: game.bgg_game_id

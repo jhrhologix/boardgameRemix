@@ -249,7 +249,11 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
 
       // Prepare relationships data
       const games = formState.data.selectedGames.map(game => ({
-        bgg_game_id: game.id
+        bgg_game_id: game.id,
+        name: game.name,
+        year_published: game.yearPublished ? parseInt(game.yearPublished) : undefined,
+        image_url: game.image,
+        bgg_url: game.bggUrl
       }))
 
       const hashtags = formState.data.hashtags.map(hashtag => ({
