@@ -61,7 +61,7 @@ export async function uploadRemixSetupImage(
     const uploadOptions = {
       folder: 'remix.games',
       public_id: filename,
-      upload_preset: 'remix.games', // Use your upload preset
+      // Remove upload_preset to use explicit API with context
       resource_type: 'auto' as const,
       quality: 'auto',
       fetch_format: 'auto',
