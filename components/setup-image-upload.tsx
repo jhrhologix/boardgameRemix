@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { X, Upload, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Edit2 } from 'lucide-react'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth'
 
 interface SetupImage {
   publicId: string
@@ -29,6 +29,7 @@ export default function SetupImageUpload({
   onImagesChange,
   isNewRemix = false
 }: SetupImageUploadProps) {
+  const { supabase } = useAuth()
   // Ensure isNewRemix is always a boolean to prevent dependency array issues
   const isNewRemixFlag = Boolean(isNewRemix)
   const [images, setImages] = useState<SetupImage[]>(initialImages)
@@ -106,7 +107,6 @@ export default function SetupImageUpload({
         formData.append('description', description.trim())
 
         // Get the auth token from Supabase
-        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         const authToken = session?.access_token
 
@@ -162,7 +162,6 @@ export default function SetupImageUpload({
     
     try {
       // Get the auth token from Supabase
-      const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const authToken = session?.access_token
       
@@ -202,7 +201,6 @@ export default function SetupImageUpload({
 
     try {
       // Get the auth token from Supabase
-      const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const authToken = session?.access_token
 

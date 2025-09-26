@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, AuthError } from '@supabase/supabase-js'
-import { supabase } from './supabase'
+import { createClient } from './supabase/client'
 import { useRouter } from 'next/navigation'
 
 type AuthContextType = {
   user: User | null
   loading: boolean
+  supabase: ReturnType<typeof createClient>
   signUp: (email: string, password: string, callbackUrl?: string) => Promise<{ user: User | null; error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>
   signOut: () => Promise<void>
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     // Only skip auth if explicitly set in environment variables
@@ -102,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     loading,
+    supabase,
     signUp,
     signIn,
     signOut,
