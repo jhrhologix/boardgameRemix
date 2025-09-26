@@ -37,7 +37,7 @@ export async function addToModerationQueue(
   contentData: any,
   aiAnalysis?: ModerationResult
 ): Promise<string | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('moderation_queue')
@@ -64,7 +64,7 @@ export async function addToModerationQueue(
  * Get pending moderation queue items
  */
 export async function getPendingModerationItems(limit = 50): Promise<ModerationQueueItem[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('moderation_queue')
@@ -90,7 +90,7 @@ export async function updateModerationStatus(
   moderatorId: string,
   notes?: string
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { error } = await supabase
     .from('moderation_queue')
@@ -114,7 +114,7 @@ export async function updateModerationStatus(
  * Get user role
  */
 export async function getUserRole(userId: string): Promise<string | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('profiles')
@@ -147,7 +147,7 @@ export async function recordUserFlag(
   contentId?: string,
   contentType?: string
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Check if flag already exists
   const { data: existingFlag } = await supabase
@@ -198,7 +198,7 @@ export async function recordUserFlag(
  * Get user flag history
  */
 export async function getUserFlagHistory(userId: string): Promise<UserFlag[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('user_flags')
@@ -241,7 +241,7 @@ export async function saveAIAnalysis(
   contentType: string,
   analysis: ModerationResult
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { error } = await supabase
     .from('ai_analysis')
@@ -275,7 +275,7 @@ export async function getModerationStats(): Promise<{
   escalatedCount: number;
   totalFlags: number;
 }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const [queueResult, flagsResult] = await Promise.all([
     supabase
