@@ -264,7 +264,7 @@ export default function SetupImageUpload({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Setup Images</h3>
+        <h3 className="text-lg font-medium text-[#FF6B35]">Setup Images</h3>
         <span className="text-sm text-gray-500">
           {images.length}/10 images
         </span>

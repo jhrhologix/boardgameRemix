@@ -23,6 +23,9 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<SetupImage | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [editingImage, setEditingImage] = useState<string | null>(null)
+  const [editDescription, setEditDescription] = useState('')
+  const [editOrder, setEditOrder] = useState(0)
 
   useEffect(() => {
     const loadImages = async () => {
@@ -68,6 +71,37 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
     setSelectedImage(images[prevIndex])
   }
 
+  const startEditing = (image: SetupImage) => {
+    setEditingImage(image.publicId)
+    setEditDescription(image.description)
+    setEditOrder(image.imageOrder)
+  }
+
+  const cancelEditing = () => {
+    setEditingImage(null)
+    setEditDescription('')
+    setEditOrder(0)
+  }
+
+  const saveEdit = async () => {
+    if (!editingImage) return
+    
+    try {
+      // Here you would call an API to update the image metadata
+      // For now, we'll just update the local state
+      setImages(prevImages => 
+        prevImages.map(img => 
+          img.publicId === editingImage 
+            ? { ...img, description: editDescription, imageOrder: editOrder }
+            : img
+        )
+      )
+      setEditingImage(null)
+    } catch (error) {
+      console.error('Error updating image:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -83,17 +117,19 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
   return (
     <>
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Setup Images</h3>
+        <h3 className="text-lg font-semibold text-[#FF6B35]">Setup Images</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images
             .sort((a, b) => a.imageOrder - b.imageOrder)
             .map((image) => (
               <div
                 key={image.publicId}
-                className="relative group cursor-pointer"
-                onClick={() => openModal(image)}
+                className="relative group"
               >
-                <div className="aspect-square relative overflow-hidden rounded-lg bg-gray-100">
+                <div 
+                  className="aspect-square relative overflow-hidden rounded-lg bg-gray-100 cursor-pointer"
+                  onClick={() => openModal(image)}
+                >
                   <Image
                     src={image.thumbnailUrl}
                     alt={image.description || `Setup image ${image.imageOrder}`}
@@ -104,11 +140,56 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
                   <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                     {image.imageOrder}
                   </div>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        startEditing(image)
+                      }}
+                      className="bg-[#FF6B35] text-white text-xs px-2 py-1 rounded hover:bg-[#e55a2b]"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </div>
-                {image.description && (
-                  <p className="text-xs text-gray-600 mt-1 truncate">
-                    {image.description}
-                  </p>
+                
+                {editingImage === image.publicId ? (
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      placeholder="Image description"
+                      className="w-full text-xs px-2 py-1 border border-gray-300 rounded"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={editOrder}
+                        onChange={(e) => setEditOrder(parseInt(e.target.value) || 0)}
+                        placeholder="Order"
+                        className="w-16 text-xs px-2 py-1 border border-gray-300 rounded"
+                      />
+                      <button
+                        onClick={saveEdit}
+                        className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-600 truncate">
+                      <strong>Order {image.imageOrder}:</strong> {image.description || 'No description'}
+                    </p>
+                  </div>
                 )}
               </div>
             ))}
