@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useAuth } from '@/lib/auth'
 
 interface SetupImage {
   publicId: string
@@ -19,6 +20,7 @@ interface SetupImagesDisplayProps {
 }
 
 export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps) {
+  const { supabase } = useAuth()
   const [images, setImages] = useState<SetupImage[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<SetupImage | null>(null)
@@ -94,8 +96,40 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
     if (!editingImage) return
     
     try {
-      // Here you would call an API to update the image metadata
-      // For now, we'll just update the local state
+      // Get auth token for API call
+      const { data: { session } } = await supabase.auth.getSession()
+      const authToken = session?.access_token
+      
+      if (!authToken) {
+        console.error('No auth token available')
+        return
+      }
+
+      // Call API to update image metadata in Cloudinary
+      const response = await fetch('/api/update-image-metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'X-Supabase-Auth': authToken
+        },
+        body: JSON.stringify({
+          publicId: editingImage,
+          description: editDescription,
+          imageOrder: editOrder
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('API error:', errorData)
+        throw new Error(`Failed to update image metadata: ${errorData.error}`)
+      }
+
+      const result = await response.json()
+      console.log('Image metadata updated successfully:', result)
+
+      // Update local state
       setImages(prevImages => 
         prevImages.map(img => 
           img.publicId === editingImage 
