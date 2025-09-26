@@ -59,6 +59,8 @@ export default function SetupImageUpload({
       if (response.ok) {
         const data = await response.json()
         console.log('Loaded images data:', data)
+        console.log('Images received:', data.images)
+        console.log('First image details:', data.images?.[0])
         setImages(data.images || [])
         onImagesChange?.(data.images || [])
       } else {
