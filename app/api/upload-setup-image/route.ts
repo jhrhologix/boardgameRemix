@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
-    const supabase = await createClient()
+    let supabase = await createClient()
     
     // Debug: Check what cookies are available
     const cookieStore = await cookies()
@@ -188,13 +188,35 @@ export async function DELETE(request: NextRequest) {
       sessionAccessToken: !!session?.access_token
     })
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let { data: { user }, error: authError } = await supabase.auth.getUser()
     console.log('DELETE - User check:', { 
       user: !!user, 
       authError,
       userId: user?.id,
       userEmail: user?.email
     })
+    
+    // If cookie-based auth failed, try token-based auth
+    if (authError || !user) {
+      console.log('DELETE - Cookie auth failed, trying token auth...')
+      const authHeader = request.headers.get('authorization')
+      const supabaseAuth = request.headers.get('x-supabase-auth')
+      const token = authHeader?.replace('Bearer ', '') || supabaseAuth
+      
+      if (token) {
+        console.log('DELETE - Trying token-based auth with token:', token.substring(0, 20) + '...')
+        supabase = await createClient(token)
+        const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser()
+        
+        if (tokenUser && !tokenError) {
+          console.log('DELETE - Token auth succeeded')
+          user = tokenUser
+          authError = null
+        } else {
+          console.log('DELETE - Token auth failed:', tokenError)
+        }
+      }
+    }
     
     if (authError || !user) {
       console.log('DELETE - Authentication failed:', authError)

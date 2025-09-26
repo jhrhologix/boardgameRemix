@@ -160,9 +160,17 @@ export default function SetupImageUpload({
     }
     
     try {
+      // Get the auth token from Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      const authToken = session?.access_token
+
       // Delete from Cloudinary via our API
       const response = await fetch(`/api/upload-setup-image?publicId=${imageToRemove.publicId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          ...(authToken ? { 'X-Supabase-Auth': authToken } : {})
+        }
       })
 
       if (!response.ok) {
@@ -184,12 +192,18 @@ export default function SetupImageUpload({
     if (!currentImage) return
 
     try {
+      // Get the auth token from Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      const authToken = session?.access_token
+
       // Use the new move up/down API endpoints
       const endpoint = direction === 'up' ? '/api/move-image-up' : '/api/move-image-down'
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          ...(authToken ? { 'X-Supabase-Auth': authToken } : {})
         },
         body: JSON.stringify({
           publicId: currentImage.publicId

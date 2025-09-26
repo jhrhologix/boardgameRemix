@@ -4,10 +4,10 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
 
-export async function createClient() {
+export async function createClient(authToken?: string) {
   const cookieStore = await cookies()
 
-  return createServerClient<Database>(
+  const client = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -33,4 +33,14 @@ export async function createClient() {
       },
     }
   )
+
+  // If authToken is provided, set it as the session
+  if (authToken) {
+    await client.auth.setSession({
+      access_token: authToken,
+      refresh_token: '', // We don't need refresh token for this
+    })
+  }
+
+  return client
 }
