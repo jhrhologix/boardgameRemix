@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { X, Upload, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Edit2 } from 'lucide-react'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 interface SetupImage {
   publicId: string
@@ -106,6 +106,7 @@ export default function SetupImageUpload({
         formData.append('description', description.trim())
 
         // Get the auth token from Supabase
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         const authToken = session?.access_token
 
@@ -161,8 +162,16 @@ export default function SetupImageUpload({
     
     try {
       // Get the auth token from Supabase
+      const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const authToken = session?.access_token
+      
+      console.log('Delete image - Auth token check:', {
+        hasSession: !!session,
+        hasToken: !!authToken,
+        tokenLength: authToken?.length,
+        tokenStart: authToken?.substring(0, 20) + '...'
+      })
 
       // Delete from Cloudinary via our API
       const response = await fetch(`/api/upload-setup-image?publicId=${imageToRemove.publicId}`, {
@@ -193,6 +202,7 @@ export default function SetupImageUpload({
 
     try {
       // Get the auth token from Supabase
+      const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const authToken = session?.access_token
 
