@@ -182,10 +182,10 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
         })
         
         // Get order from context metadata or metadata fields (stored during upload)
-        const imageOrder = parseInt(resource.context?.order || '0') || 0
+        const imageOrder = parseInt(resource.context?.custom?.order || resource.context?.order || '0') || 0
         
-        // Get description from context fields only
-        const description = resource.context?.alt || resource.context?.caption || ''
+        // Get description from context fields only (check both custom and direct context)
+        const description = resource.context?.custom?.alt || resource.context?.custom?.caption || resource.context?.alt || resource.context?.caption || ''
         
         console.log('Extracted metadata:', { imageOrder, description })
         console.log('Context data:', resource.context)

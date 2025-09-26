@@ -134,8 +134,11 @@ export default function SetupImageUpload({
       
       // Refresh images from Cloudinary to get the latest data
       console.log('Calling loadImages() to refresh images...')
-      await loadImages()
-      console.log('loadImages() completed')
+      // Add a small delay to allow Cloudinary indexing
+      setTimeout(async () => {
+        await loadImages()
+        console.log('loadImages() completed')
+      }, 1000)
       
       // Clear description after successful upload
       setDescription('')
