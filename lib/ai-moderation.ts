@@ -78,6 +78,8 @@ export async function moderateContent(input: ModerationInput): Promise<Moderatio
 
 /**
  * Analyze images for promotional content, URLs, and spam
+ * Note: This function currently analyzes image URLs as text since Anthropic requires base64 data
+ * For full image analysis, images would need to be fetched and converted to base64
  */
 export async function moderateImages(imageUrls: string[]): Promise<{
   hasSpam: boolean;
@@ -97,21 +99,18 @@ export async function moderateImages(imageUrls: string[]): Promise<{
   }
 
   try {
-    const prompt = `ANALYZE THESE IMAGES FOR:
-1. Any readable text (provide full transcription)
-2. URLs, social media handles, contact information
-3. Business names, logos, promotional material
-4. QR codes or suspicious graphics
-5. Does image actually show board game setup?
+    const prompt = `ANALYZE THESE IMAGE URLS FOR POTENTIAL SPAM CONTENT:
+1. Check if URLs contain promotional keywords
+2. Look for suspicious domain patterns
+3. Identify potential business/promotional content
 
-Images to analyze: ${imageUrls.join(', ')}
+Image URLs to analyze: ${imageUrls.join(', ')}
 
 FLAG IF FOUND:
-- Contact information
-- Website URLs
-- Social media promotion
-- Business/product advertising
-- No actual game components visible
+- URLs containing promotional keywords (buy, sell, shop, store, etc.)
+- Suspicious domains (shortened links, redirect services)
+- Business/product advertising URLs
+- Social media promotion URLs
 
 Respond with JSON format:
 {
@@ -129,19 +128,7 @@ Respond with JSON format:
       temperature: 0.1,
       messages: [{
         role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: prompt
-          },
-          ...imageUrls.map(url => ({
-            type: 'image',
-            source: {
-              type: 'url',
-              url: url
-            }
-          }))
-        ]
+        content: prompt
       }]
     });
 

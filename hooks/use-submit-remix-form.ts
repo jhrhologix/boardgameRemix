@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase' // Use singleton client
 import type { BGGGame } from '@/lib/bgg-api'
 import { useContentModeration } from './use-content-moderation'
 import { useAuth } from '@/lib/auth'
+import { createRemix, updateRemix } from '@/lib/actions-remix'
 
 export interface FormData {
   title: string
@@ -240,42 +241,38 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
         title: formState.data.title.trim(),
         description: formState.data.description.trim(),
         difficulty: formState.data.difficulty,
-        user_id: userId,
         rules: formState.data.rules.trim(),
         setup_instructions: formState.data.setupInstructions.trim(),
-        youtube_url: formState.data.youtubeUrl.trim() || null,
-        max_players: formState.data.maxPlayers ? parseInt(formState.data.maxPlayers) : null,
+        youtube_url: formState.data.youtubeUrl.trim() || undefined,
+        max_players: formState.data.maxPlayers ? parseInt(formState.data.maxPlayers) : undefined,
       }
 
-      let remix
+      // Prepare relationships data
+      const games = formState.data.selectedGames.map(game => ({
+        bgg_game_id: game.id
+      }))
+
+      const hashtags = formState.data.hashtags.map(hashtag => ({
+        name: hashtag
+      }))
+
+      const tags: { name: string }[] = [] // Add tags if needed
+
+      let result
       
       if (remixId) {
         // Update existing remix
-        const { data: updatedRemix, error: updateError } = await supabase
-          .from("remixes")
-          .update(remixData)
-          .eq('id', remixId)
-          .select()
-          .single()
-
-        if (updateError) throw new Error(updateError.message || "Failed to update remix")
-        remix = updatedRemix
+        result = await updateRemix(remixId, remixData, games, hashtags, tags, userId)
       } else {
         // Create new remix
-        const { data: newRemix, error: insertError } = await supabase
-          .from("remixes")
-          .insert(remixData)
-          .select()
-          .single()
-
-        if (insertError) throw new Error(insertError.message || "Failed to create remix")
-        remix = newRemix
+        result = await createRemix(remixData, games, hashtags, tags, userId)
       }
 
-      if (!remix) throw new Error("No remix data returned")
+      if (!result.success || !result.remix) {
+        throw new Error("Failed to save remix")
+      }
 
-      // Handle relationships (games, hashtags, tags)
-      await handleRemixRelationships(remix.id)
+      const remix = result.remix
 
       // Run content moderation
       const moderationResult = await moderateContent({
@@ -336,73 +333,6 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     }
   }
 
-  // Handle remix relationships (games, hashtags, tags)
-  const handleRemixRelationships = async (remixId: string) => {
-    // If editing, first delete existing relationships
-    if (remixId) {
-      await Promise.all([
-        supabase.from("remix_games").delete().eq('remix_id', remixId),
-        supabase.from("remix_hashtags").delete().eq('remix_id', remixId),
-        supabase.from("remix_tags").delete().eq('remix_id', remixId)
-      ])
-    }
-
-    // Handle games
-    for (const game of formState.data.selectedGames) {
-      // Insert or get the BGG game
-      const { data: bggGame, error: bggError } = await supabase
-        .from("bgg_games")
-        .upsert({
-          bgg_id: game.id,
-          name: game.name,
-          image_url: game.image,
-          year_published: game.yearPublished,
-          bgg_url: game.bggUrl || `https://boardgamegeek.com/boardgame/${game.id}`,
-        }, {
-          onConflict: 'bgg_id'
-        })
-        .select()
-        .single()
-
-      if (bggError) throw new Error(`Failed to save game: ${bggError.message}`)
-
-      // Create remix-game relationship
-      const { error: relationError } = await supabase
-        .from("remix_games")
-        .insert({
-          remix_id: remixId,
-          bgg_game_id: bggGame.id
-        })
-
-      if (relationError) throw new Error(`Failed to link game: ${relationError.message}`)
-    }
-
-    // Handle hashtags
-    for (const hashtagName of formState.data.hashtags) {
-      // Insert or get the hashtag
-      const { data: hashtag, error: hashtagError } = await supabase
-        .from("hashtags")
-        .upsert({
-          name: hashtagName.toLowerCase().trim()
-        }, {
-          onConflict: 'name'
-        })
-        .select()
-        .single()
-
-      if (hashtagError) throw new Error(`Failed to save hashtag: ${hashtagError.message}`)
-
-      // Create remix-hashtag relationship
-      const { error: relationError } = await supabase
-        .from("remix_hashtags")
-        .insert({
-          remix_id: remixId,
-          hashtag_id: hashtag.id
-        })
-
-      if (relationError) throw new Error(`Failed to link hashtag: ${relationError.message}`)
-    }
-  }
 
   return {
     formState,
