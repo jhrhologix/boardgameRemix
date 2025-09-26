@@ -19,6 +19,14 @@ Board Game Remix is a Next.js web application that allows users to discover, cre
 
 ---
 
+## ⚠️ **Database Maintenance**
+
+**🚨 CRITICAL: Before making any database changes, read [DATABASE-MAINTENANCE.md](./DATABASE-MAINTENANCE.md)**
+
+This guide contains essential procedures for safe database maintenance and preventing data loss during schema changes.
+
+---
+
 ## ✨ **Features**
 
 ### **🎯 Core Functionality**
