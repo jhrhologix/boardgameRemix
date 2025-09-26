@@ -70,6 +70,11 @@ export async function uploadRemixSetupImage(
         caption: description.substring(0, 255),
         order: imageOrder.toString() // Store order as metadata
       },
+      // Use metadata fields for better data structure
+      metadata: {
+        description: description.substring(0, 255),
+        image_order: imageOrder.toString()
+      },
       transformation: [
         { width: 1024, height: 1024, crop: 'limit', quality: 'auto' },
         { fetch_format: 'auto' }
@@ -80,7 +85,8 @@ export async function uploadRemixSetupImage(
       filename,
       imageOrder,
       description,
-      context: uploadOptions.context
+      context: uploadOptions.context,
+      metadata: uploadOptions.metadata
     })
     
     const result = await cloudinary.uploader.upload(
@@ -88,7 +94,11 @@ export async function uploadRemixSetupImage(
       uploadOptions
     )
     
-    console.log('Upload result context:', result.context)
+    console.log('Upload result:', {
+      context: result.context,
+      metadata: result.metadata,
+      publicId: result.public_id
+    })
 
     return {
       url: result.secure_url,
@@ -164,21 +174,31 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
 
     return result.resources
       .map((resource: any) => {
-        // Debug: Log the context metadata
-        console.log('Resource context metadata:', {
+        // Debug: Log the context and metadata
+        console.log('Resource metadata:', {
           publicId: resource.public_id,
           context: resource.context,
+          metadata: resource.metadata,
           order: resource.context?.order,
           alt: resource.context?.alt,
           caption: resource.context?.caption,
-          allContextKeys: resource.context ? Object.keys(resource.context) : 'no context'
+          allContextKeys: resource.context ? Object.keys(resource.context) : 'no context',
+          allMetadataKeys: resource.metadata ? Object.keys(resource.metadata) : 'no metadata'
         })
         
-        // Get order from context metadata (stored during upload)
-        const imageOrder = parseInt(resource.context?.order || '0') || 0
+        // Get order from context metadata or metadata fields (stored during upload)
+        const imageOrder = parseInt(
+          resource.context?.order || 
+          resource.metadata?.image_order || 
+          '0'
+        ) || 0
         
-        // Get description from context (alt or caption)
-        const description = resource.context?.alt || resource.context?.caption || ''
+        // Get description from context or metadata fields
+        const description = 
+          resource.context?.alt || 
+          resource.context?.caption || 
+          resource.metadata?.description || 
+          ''
         
         console.log('Extracted metadata:', { imageOrder, description })
         
