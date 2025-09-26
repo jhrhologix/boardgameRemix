@@ -159,13 +159,14 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
         // Get description from context (alt or caption)
         const description = resource.context?.alt || resource.context?.caption || ''
         
-        // Generate thumbnail URL
+        // Generate clean thumbnail URL
         const thumbnailUrl = cloudinary.url(resource.public_id, {
           width: 200,
           height: 200,
           crop: 'fill',
           quality: 'auto',
-          fetch_format: 'auto'
+          fetch_format: 'auto',
+          secure: true
         })
 
         // Generate clean URL without metadata

@@ -51,7 +51,7 @@ export default function FavoriteButton({ remixId, isFavorited = false, isAuthent
       if (isFavorite) {
         // Remove from favorites
         const { error } = await supabase
-          .from('favorites')
+          .from('user_favorites')
           .delete()
           .eq('remix_id', remixId)
           .eq('user_id', user.id)
@@ -65,7 +65,7 @@ export default function FavoriteButton({ remixId, isFavorited = false, isAuthent
       } else {
         // Add to favorites
         const { error } = await supabase
-          .from('favorites')
+          .from('user_favorites')
           .insert({
             remix_id: remixId,
             user_id: user.id
