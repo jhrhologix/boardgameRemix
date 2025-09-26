@@ -38,6 +38,10 @@ export default function FavoriteButton({
       isFavorited: safeProps.isFavorited, 
       isAuthenticated: safeProps.isAuthenticated 
     })
+    console.log('Favorite button - isAuthenticated check:', { 
+      isAuthenticated: safeProps.isAuthenticated, 
+      type: typeof safeProps.isAuthenticated 
+    })
     
     // Redirect to login if not authenticated
     if (!safeProps.isAuthenticated) {

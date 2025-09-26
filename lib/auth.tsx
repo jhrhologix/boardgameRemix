@@ -32,6 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Production: Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('AuthProvider: Initial session check:', { 
+        hasSession: !!session, 
+        hasUser: !!session?.user, 
+        userId: session?.user?.id,
+        error: error?.message 
+      })
       if (error) {
         console.warn('Auth session error:', error.message)
       }
@@ -45,6 +51,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for changes on auth state (signed in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AuthProvider: Auth state change:', { 
+        event, 
+        hasSession: !!session, 
+        hasUser: !!session?.user,
+        userId: session?.user?.id
+      })
       if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setUser(session?.user ?? null)
         router.refresh()

@@ -29,6 +29,7 @@ export default function VoteButtons({
 
   const handleVote = async () => {
     console.log('Vote button clicked:', { remixId, userVote, isAuthenticated })
+    console.log('Vote button - isAuthenticated check:', { isAuthenticated, type: typeof isAuthenticated })
     
     if (!isAuthenticated) {
       console.log('User not authenticated, redirecting to login')
