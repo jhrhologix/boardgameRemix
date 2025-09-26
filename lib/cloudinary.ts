@@ -167,31 +167,57 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
       }))
     })
 
-    return result.resources
-      .map((resource: any) => {
-        // Debug: Log the context and metadata
-        console.log('Resource metadata:', {
-          publicId: resource.public_id,
-          context: resource.context,
-          metadata: resource.metadata,
-          order: resource.context?.order,
-          alt: resource.context?.alt,
-          caption: resource.context?.caption,
-          allContextKeys: resource.context ? Object.keys(resource.context) : 'no context',
-          allMetadataKeys: resource.metadata ? Object.keys(resource.metadata) : 'no metadata'
+    // Get detailed resource information for each image using Admin API
+    const images = await Promise.all(result.resources.map(async (resource: any) => {
+      try {
+        // Use Admin API to get full resource details including context
+        const resourceDetails = await cloudinary.api.resource(resource.public_id, {
+          context: true,
+          metadata: true
         })
         
-        // Get order from context metadata or metadata fields (stored during upload)
-        const imageOrder = parseInt(resource.context?.custom?.order || resource.context?.order || '0') || 0
+        console.log('Resource details from Admin API:', {
+          publicId: resourceDetails.public_id,
+          context: resourceDetails.context,
+          metadata: resourceDetails.metadata,
+          contextKeys: resourceDetails.context ? Object.keys(resourceDetails.context) : 'no context',
+          metadataKeys: resourceDetails.metadata ? Object.keys(resourceDetails.metadata) : 'no metadata'
+        })
+
+        // Get image order from context fields (check both custom and direct context)
+        const imageOrder = parseInt(resourceDetails.context?.custom?.order || resourceDetails.context?.order || '0') || 0
         
         // Get description from context fields only (check both custom and direct context)
-        const description = resource.context?.custom?.alt || resource.context?.custom?.caption || resource.context?.alt || resource.context?.caption || ''
+        const description = resourceDetails.context?.custom?.alt || resourceDetails.context?.custom?.caption || resourceDetails.context?.alt || resourceDetails.context?.caption || ''
         
-        console.log('Extracted metadata:', { imageOrder, description })
-        console.log('Context data:', resource.context)
-        console.log('Resource public_id:', resource.public_id)
+        console.log('Extracted metadata from Admin API:', { imageOrder, description })
         
         // Generate clean thumbnail URL
+        const thumbnailUrl = cloudinary.url(resourceDetails.public_id, {
+          width: 200,
+          height: 200,
+          crop: 'fill',
+          quality: 'auto',
+          fetch_format: 'auto',
+          secure: true
+        })
+        
+        // Generate clean full-size URL
+        const cleanUrl = cloudinary.url(resourceDetails.public_id, {
+          secure: true
+        })
+        
+        return {
+          publicId: resourceDetails.public_id,
+          url: cleanUrl,
+          thumbnailUrl,
+          imageOrder,
+          description,
+          createdAt: resourceDetails.created_at
+        }
+      } catch (error) {
+        console.error('Error getting resource details for:', resource.public_id, error)
+        // Fallback to basic info if Admin API fails
         const thumbnailUrl = cloudinary.url(resource.public_id, {
           width: 200,
           height: 200,
@@ -200,36 +226,27 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
           fetch_format: 'auto',
           secure: true
         })
-
-        // Generate clean URL without metadata
+        
         const cleanUrl = cloudinary.url(resource.public_id, {
           secure: true
         })
-
-        console.log('Generated URLs:', {
-          publicId: resource.public_id,
-          thumbnailUrl,
-          cleanUrl,
-          originalSecureUrl: resource.secure_url
-        })
-        console.log('Final image object:', {
-          publicId: resource.public_id,
-          url: cleanUrl,
-          thumbnailUrl,
-          imageOrder,
-          description
-        })
-
+        
         return {
           publicId: resource.public_id,
           url: cleanUrl,
           thumbnailUrl,
-          imageOrder,
-          description,
+          imageOrder: 0,
+          description: '',
           createdAt: resource.created_at
         }
-      })
-      .sort((a: any, b: any) => a.imageOrder - b.imageOrder) // Sort by order metadata
+      }
+    }))
+
+    // Sort by imageOrder
+    images.sort((a, b) => a.imageOrder - b.imageOrder)
+    
+    console.log('Final images array:', images)
+    return images
   } catch (error) {
     console.error('Error searching Cloudinary images:', error)
     return []
