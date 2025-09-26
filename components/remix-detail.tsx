@@ -137,6 +137,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         if (favoriteError) {
           console.error('Error fetching favorite status:', favoriteError)
         } else {
+          console.log('Favorite status check:', { favoriteData, isFavorited: !!favoriteData })
           setIsFavorited(!!favoriteData)
         }
       } catch (err) {
