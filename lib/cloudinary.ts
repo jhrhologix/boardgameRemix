@@ -174,6 +174,13 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
           secure: true
         })
 
+        console.log('Generated URLs:', {
+          publicId: resource.public_id,
+          thumbnailUrl,
+          cleanUrl,
+          originalSecureUrl: resource.secure_url
+        })
+
         return {
           publicId: resource.public_id,
           url: cleanUrl,

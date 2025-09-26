@@ -115,12 +115,12 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         // Get user's vote
         const { data: voteData } = await supabase
           .from('user_votes')
-          .select('value')
+          .select('vote_type')
           .eq('user_id', user.id)
           .eq('remix_id', remix.id)
           .single()
 
-        setUserVote(voteData?.value)
+        setUserVote(voteData?.vote_type)
 
         // Get favorite status
         const { data: favoriteData } = await supabase
