@@ -34,9 +34,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user should bypass moderation
+    console.log('Moderation API - checking bypass for user:', user.id);
     const bypassModeration = await shouldBypassModeration(user.id);
     
     if (bypassModeration) {
+      console.log('Moderation API - bypassing moderation for user:', user.id);
       return NextResponse.json({
         approved: true,
         bypassed: true,

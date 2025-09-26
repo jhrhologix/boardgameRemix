@@ -116,6 +116,8 @@ export async function updateModerationStatus(
 export async function getUserRole(userId: string): Promise<string | null> {
   const supabase = await createClient();
   
+  console.log('getUserRole called with userId:', userId);
+  
   const { data, error } = await supabase
     .from('profiles')
     .select('role')
@@ -127,7 +129,10 @@ export async function getUserRole(userId: string): Promise<string | null> {
     return null;
   }
 
-  return data?.role || 'user';
+  const role = data?.role || 'user';
+  console.log('getUserRole result:', { userId, role, data });
+  
+  return role;
 }
 
 /**
@@ -135,7 +140,9 @@ export async function getUserRole(userId: string): Promise<string | null> {
  */
 export async function shouldBypassModeration(userId: string): Promise<boolean> {
   const role = await getUserRole(userId);
-  return role === 'admin' || role === 'moderator';
+  const shouldBypass = role === 'admin' || role === 'moderator';
+  console.log('shouldBypassModeration result:', { userId, role, shouldBypass });
+  return shouldBypass;
 }
 
 /**
