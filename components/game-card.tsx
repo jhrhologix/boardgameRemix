@@ -92,9 +92,7 @@ export default function GameCard({
         <VoteButtons
           remixId={id}
           upvotes={upvotes}
-          downvotes={downvotes}
           userVote={userVote}
-          isAuthenticated={isAuthenticated || false}
           className="scale-90"
         />
         <FavoriteButton

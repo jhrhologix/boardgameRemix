@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase' // Use singleton client
 import type { BGGGame } from '@/lib/bgg-api'
+import { useContentModeration } from './use-content-moderation'
+import { useAuth } from '@/lib/auth'
 
 export interface FormData {
   title: string
@@ -21,10 +23,14 @@ export interface FormState {
   error: string | null
   captchaToken: string | null
   captchaError: string | null
+  moderationStatus: 'pending' | 'approved' | 'rejected' | 'escalated' | null
+  moderationMessage: string | null
 }
 
 export function useSubmitRemixForm(userId: string, remixId?: string) {
   const router = useRouter()
+  const { moderateContent, loading: moderationLoading, error: moderationError } = useContentModeration()
+  const { user } = useAuth()
   
   const [formState, setFormState] = useState<FormState>({
     data: {
@@ -42,6 +48,8 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
     error: null,
     captchaToken: null,
     captchaError: null,
+    moderationStatus: null,
+    moderationMessage: null,
   })
 
   const [existingTags, setExistingTags] = useState<string[]>([])
@@ -215,13 +223,11 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
       return false
     }
 
-    setFormState(prev => ({ ...prev, isSubmitting: true, error: null }))
+    setFormState(prev => ({ ...prev, isSubmitting: true, error: null, moderationStatus: null, moderationMessage: null }))
 
     try {
       // Verify user is still authenticated
-      const { data: { user }, error: sessionError } = await supabase.auth.getUser()
-      
-      if (sessionError || !user) {
+      if (!user) {
         throw new Error("Authentication error. Please try logging in again.")
       }
 
@@ -271,14 +277,53 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
       // Handle relationships (games, hashtags, tags)
       await handleRemixRelationships(remix.id)
 
-      // Reset reCAPTCHA
-      if (recaptchaRef.current) {
-        recaptchaRef.current.reset()
-      }
+      // Run content moderation
+      const moderationResult = await moderateContent({
+        contentType: 'remix',
+        contentId: remix.id,
+        title: formState.data.title.trim(),
+        description: formState.data.description.trim(),
+        rules: formState.data.rules.trim(),
+        imageUrls: [] // TODO: Add image URLs when available
+      })
 
-      // Redirect to the remix page
-      router.push(`/remixes/${remix.id}`)
-      return true
+      if (moderationResult) {
+        if (moderationResult.approved) {
+          // Content approved, proceed normally
+          setFormState(prev => ({ 
+            ...prev, 
+            isSubmitting: false,
+            moderationStatus: 'approved',
+            moderationMessage: moderationResult.bypassed ? 'Admin/Moderator bypass' : 'Content approved'
+          }))
+
+          // Reset reCAPTCHA
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset()
+          }
+
+          // Redirect to the remix page
+          router.push(`/remixes/${remix.id}`)
+          return true
+        } else {
+          // Content needs moderation
+          setFormState(prev => ({ 
+            ...prev, 
+            isSubmitting: false,
+            moderationStatus: moderationResult.escalated ? 'escalated' : 'pending',
+            moderationMessage: moderationResult.message || 'Content is under review'
+          }))
+          return false
+        }
+      } else {
+        // Moderation failed, show error
+        setFormState(prev => ({ 
+          ...prev, 
+          isSubmitting: false,
+          error: moderationError || 'Moderation failed. Please try again.'
+        }))
+        return false
+      }
 
     } catch (error) {
       console.error('Error submitting remix:', error)

@@ -343,6 +343,19 @@ export default function SubmitRemixForm({ userId, remixId }: SubmitRemixFormProp
         </div>
       )}
 
+      {/* Moderation Status */}
+      {formState.moderationStatus && (
+        <Alert className={formState.moderationStatus === 'approved' ? 'border-green-500 bg-green-50' : 
+                          formState.moderationStatus === 'rejected' ? 'border-red-500 bg-red-50' :
+                          formState.moderationStatus === 'escalated' ? 'border-orange-500 bg-orange-50' :
+                          'border-yellow-500 bg-yellow-50'}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {formState.moderationMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Submit Button */}
       <Button
         type="submit"

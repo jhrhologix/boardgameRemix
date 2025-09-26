@@ -80,8 +80,7 @@ export async function uploadRemixSetupImage(
       filename,
       imageOrder,
       description,
-      context: uploadOptions.context,
-      metadata: uploadOptions.metadata
+      context: uploadOptions.context
     })
     
     const result = await cloudinary.uploader.upload(

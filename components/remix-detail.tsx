@@ -203,7 +203,6 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                 remixId={remix.id}
                 upvotes={remix.upvotes}
                 userVote={userVote}
-                isAuthenticated={isAuthenticated}
               />
               {isAuthenticated && (
                 <FavoriteButton
