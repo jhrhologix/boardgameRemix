@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { uploadRemixSetupImage } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
@@ -170,9 +171,33 @@ export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
     const supabase = await createClient()
+    
+    // Debug: Check what cookies are available
+    const cookieStore = await cookies()
+    const supabaseCookies = cookieStore.getAll().filter(cookie => 
+      cookie.name.includes('supabase') || cookie.name.includes('sb-')
+    )
+    console.log('DELETE - Supabase cookies found:', supabaseCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+
+    // Try to get the session first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('DELETE - Session check:', { 
+      session: !!session, 
+      sessionError,
+      sessionUser: session?.user?.id,
+      sessionAccessToken: !!session?.access_token
+    })
+
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('DELETE - User check:', { 
+      user: !!user, 
+      authError,
+      userId: user?.id,
+      userEmail: user?.email
+    })
     
     if (authError || !user) {
+      console.log('DELETE - Authentication failed:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
