@@ -48,7 +48,7 @@ export async function createRemix(
       .from('remixes')
       .insert({
         ...remixData,
-        creator_id: userId
+        user_id: userId
       })
       .select()
       .single()
@@ -174,7 +174,7 @@ export async function updateRemix(
       .from('remixes')
       .update(remixData)
       .eq('id', remixId)
-      .eq('creator_id', userId) // Ensure user owns the remix
+      .eq('user_id', userId) // Ensure user owns the remix
       .select()
       .single()
 
