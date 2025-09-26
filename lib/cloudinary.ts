@@ -58,26 +58,37 @@ export async function uploadRemixSetupImage(
     })
     
     // Upload to Cloudinary with specific folder structure
+    const uploadOptions = {
+      folder: 'remix.games',
+      public_id: filename,
+      upload_preset: 'remix.games', // Use your upload preset
+      resource_type: 'auto',
+      quality: 'auto',
+      fetch_format: 'auto',
+      context: {
+        alt: description.substring(0, 255), // Max 255 chars for description
+        caption: description.substring(0, 255),
+        order: imageOrder.toString() // Store order as metadata
+      },
+      transformation: [
+        { width: 1024, height: 1024, crop: 'limit', quality: 'auto' },
+        { fetch_format: 'auto' }
+      ]
+    }
+    
+    console.log('Uploading with options:', {
+      filename,
+      imageOrder,
+      description,
+      context: uploadOptions.context
+    })
+    
     const result = await cloudinary.uploader.upload(
       `data:${mimeType};base64,${imageBuffer.toString('base64')}`,
-      {
-        folder: 'remix.games',
-        public_id: filename,
-        upload_preset: 'remix.games', // Use your upload preset
-        resource_type: 'auto',
-        quality: 'auto',
-        fetch_format: 'auto',
-        context: {
-          alt: description.substring(0, 255), // Max 255 chars for description
-          caption: description.substring(0, 255),
-          order: imageOrder.toString() // Store order as metadata
-        },
-        transformation: [
-          { width: 1024, height: 1024, crop: 'limit', quality: 'auto' },
-          { fetch_format: 'auto' }
-        ]
-      }
+      uploadOptions
     )
+    
+    console.log('Upload result context:', result.context)
 
     return {
       url: result.secure_url,
@@ -159,7 +170,8 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
           context: resource.context,
           order: resource.context?.order,
           alt: resource.context?.alt,
-          caption: resource.context?.caption
+          caption: resource.context?.caption,
+          allContextKeys: resource.context ? Object.keys(resource.context) : 'no context'
         })
         
         // Get order from context metadata (stored during upload)
@@ -167,6 +179,8 @@ export async function getRemixSetupImages(remixId: string): Promise<Array<{
         
         // Get description from context (alt or caption)
         const description = resource.context?.alt || resource.context?.caption || ''
+        
+        console.log('Extracted metadata:', { imageOrder, description })
         
         // Generate clean thumbnail URL
         const thumbnailUrl = cloudinary.url(resource.public_id, {

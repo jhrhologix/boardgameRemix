@@ -12,10 +12,16 @@ export async function voteOnRemix(formData: FormData) {
   console.log('voteOnRemix called:', { remixId, voteType })
 
   try {
+    // Try to get the session first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('Session check:', { session: !!session, sessionError })
+
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
+
+    console.log('User check:', { user: !!user, userError })
 
     if (userError || !user) {
       console.error("Authentication error:", userError)
@@ -101,10 +107,16 @@ export async function toggleFavorite(formData: FormData) {
 
     console.log('toggleFavorite called:', { remixId })
 
+    // Try to get the session first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('Session check:', { session: !!session, sessionError })
+
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
+
+    console.log('User check:', { user: !!user, userError })
 
     if (userError || !user) {
       console.error("Authentication error:", userError)
