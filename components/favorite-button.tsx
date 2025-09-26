@@ -33,13 +33,23 @@ export default function FavoriteButton({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleToggleFavorite = async () => {
+    console.log('Favorite button clicked:', { 
+      remixId: safeProps.remixId, 
+      isFavorited: safeProps.isFavorited, 
+      isAuthenticated: safeProps.isAuthenticated 
+    })
+    
     // Redirect to login if not authenticated
     if (!safeProps.isAuthenticated) {
+      console.log('User not authenticated, redirecting to login')
       router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
       return
     }
 
-    if (isSubmitting) return // Prevent multiple clicks
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring click')
+      return // Prevent multiple clicks
+    }
 
     setIsSubmitting(true)
     setOptimisticFavorite(!optimisticFavorite)
@@ -48,17 +58,22 @@ export default function FavoriteButton({
     formData.append("remixId", safeProps.remixId)
 
     try {
+      console.log('Sending favorite toggle request:', { remixId: safeProps.remixId })
       const result = await toggleFavorite(formData)
+      console.log('Favorite toggle result:', result)
 
       if (!result.success) {
         // Handle authentication error
         if (result.error === "authentication") {
+          console.log('Authentication error, reverting optimistic update and redirecting')
           // Revert optimistic update
           setOptimisticFavorite(safeProps.isFavorited)
 
           // Redirect to login
           router.push(`/auth/login?callbackUrl=/remixes/${safeProps.remixId}`)
         }
+      } else {
+        console.log('Favorite toggle successful')
       }
     } catch (error) {
       console.error("Error toggling favorite:", error)

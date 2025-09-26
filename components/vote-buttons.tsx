@@ -1,6 +1,6 @@
 "use client"
 
-import { ThumbsUp, ThumbsDown } from "lucide-react"
+import { ThumbsUp } from "lucide-react"
 import { useState } from "react"
 import { voteOnRemix } from "@/lib/actions"
 import { cn } from "@/lib/utils"
@@ -11,7 +11,6 @@ import { useToast } from "@/components/ui/use-toast"
 interface VoteButtonsProps {
   remixId: string
   upvotes: number
-  downvotes: number
   userVote?: string
   className?: string
   isAuthenticated: boolean
@@ -20,7 +19,6 @@ interface VoteButtonsProps {
 export default function VoteButtons({
   remixId,
   upvotes,
-  downvotes,
   userVote,
   className,
   isAuthenticated
@@ -29,8 +27,11 @@ export default function VoteButtons({
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleVote = async (value: 'upvote' | 'downvote') => {
+  const handleVote = async () => {
+    console.log('Vote button clicked:', { remixId, userVote, isAuthenticated })
+    
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login')
       toast({
         title: "Login Required",
         description: "Please log in to vote on remixes.",
@@ -47,23 +48,31 @@ export default function VoteButtons({
       return
     }
 
-    if (isLoading) return
+    if (isLoading) {
+      console.log('Already loading, ignoring click')
+      return
+    }
 
     setIsLoading(true)
     try {
       const formData = new FormData()
       formData.append('remixId', remixId)
-      formData.append('voteType', userVote === value ? 'remove' : value)
+      formData.append('voteType', userVote === 'upvote' ? 'remove' : 'upvote')
+      
+      console.log('Sending vote request:', { remixId, voteType: userVote === 'upvote' ? 'remove' : 'upvote' })
       const result = await voteOnRemix(formData)
+      console.log('Vote result:', result)
       
       if (!result.success) {
         if (result.error === 'authentication') {
+          console.log('Authentication error, redirecting to login')
           router.push('/auth')
           return
         }
         throw new Error(result.message)
       }
       
+      console.log('Vote successful, refreshing page')
       router.refresh()
     } catch (error) {
       console.error('Error voting:', error)
@@ -83,7 +92,7 @@ export default function VoteButtons({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => handleVote('upvote')}
+              onClick={handleVote}
               disabled={isLoading}
               className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-md transition-colors min-h-[40px] min-w-[40px] justify-center",
@@ -97,28 +106,7 @@ export default function VoteButtons({
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{isAuthenticated ? (userVote === 'upvote' ? "Remove upvote" : "Upvote this remix") : "Log in to upvote"}</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => handleVote('downvote')}
-              disabled={isLoading}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-md transition-colors min-h-[40px] min-w-[40px] justify-center",
-                userVote === 'downvote' 
-                  ? "text-red-500 bg-red-500/10" 
-                  : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
-              )}
-            >
-              <ThumbsDown size={18} className="sm:w-5 sm:h-5" />
-              <span className="text-sm font-medium">{downvotes || 0}</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isAuthenticated ? (userVote === 'downvote' ? "Remove downvote" : "Downvote this remix") : "Log in to downvote"}</p>
+            <p>{isAuthenticated ? (userVote === 'upvote' ? "Remove like" : "Like this remix") : "Log in to like"}</p>
           </TooltipContent>
         </Tooltip>
       </div>

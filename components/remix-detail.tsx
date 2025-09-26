@@ -201,7 +201,6 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
               <VoteButtons
                 remixId={remix.id}
                 upvotes={remix.upvotes}
-                downvotes={remix.downvotes}
                 userVote={userVote}
                 isAuthenticated={isAuthenticated}
               />

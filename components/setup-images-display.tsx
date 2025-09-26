@@ -30,10 +30,17 @@ export default function SetupImagesDisplay({ remixId }: SetupImagesDisplayProps)
   useEffect(() => {
     const loadImages = async () => {
       try {
+        console.log('Loading images for remixId:', remixId)
         const response = await fetch(`/api/remix-images?remixId=${remixId}`)
+        console.log('Image API response status:', response.status)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('Image API response data:', data)
+          console.log('Images received:', data.images)
           setImages(data.images || [])
+        } else {
+          console.error('Image API error:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Error loading setup images:', error)

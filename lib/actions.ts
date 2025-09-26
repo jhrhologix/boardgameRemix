@@ -6,8 +6,10 @@ import { cookies } from "next/headers"
 
 export async function voteOnRemix(formData: FormData) {
   const remixId = formData.get("remixId") as string
-  const voteType = formData.get("voteType") as "upvote" | "downvote" | "remove"
+  const voteType = formData.get("voteType") as "upvote" | "remove"
   const supabase = await createClient()
+
+  console.log('voteOnRemix called:', { remixId, voteType })
 
   try {
     const {
@@ -21,6 +23,7 @@ export async function voteOnRemix(formData: FormData) {
     }
 
     const userId = user.id
+    console.log('User authenticated:', { userId })
 
     // Check if user has already voted on this remix
     const { data: existingVote, error: voteError } = await supabase
@@ -28,15 +31,18 @@ export async function voteOnRemix(formData: FormData) {
       .select("*")
       .eq("user_id", userId)
       .eq("remix_id", remixId)
-      .single()
+      .maybeSingle()
 
-    if (voteError && voteError.code !== 'PGRST116') {
+    console.log('Existing vote check:', { existingVote, voteError })
+
+    if (voteError) {
       console.error("Error checking vote status:", voteError)
       return { success: false, error: "unknown", message: "Error checking vote status" }
     }
 
     // If user is clicking the same vote type again or removing vote, delete the vote
     if (existingVote && (voteType === existingVote.vote_type || voteType === "remove")) {
+      console.log('Removing existing vote')
       const { error: deleteError } = await supabase
         .from("user_votes")
         .delete()
@@ -47,14 +53,16 @@ export async function voteOnRemix(formData: FormData) {
         console.error("Error removing vote:", deleteError)
         return { success: false, error: "unknown", message: "Error removing vote" }
       }
+      console.log('Vote removed successfully')
     } else {
-      // Insert new vote or update existing vote
+      // Insert new vote (only upvote allowed)
       const voteData = {
         remix_id: remixId,
         user_id: userId,
-        vote_type: voteType
+        vote_type: "upvote" // Only allow upvotes
       }
 
+      console.log('Inserting new vote:', voteData)
       const { error: upsertError } = await supabase
         .from("user_votes")
         .upsert(voteData, { onConflict: 'user_id,remix_id' })
@@ -63,9 +71,11 @@ export async function voteOnRemix(formData: FormData) {
         console.error("Error upserting vote:", upsertError)
         return { success: false, error: "unknown", message: "Error updating vote" }
       }
+      console.log('Vote inserted successfully')
     }
 
     // Update vote count on remix
+    console.log('Updating vote count for remix:', remixId)
     const { error: updateError } = await supabase.rpc("update_remix_votes", {
       remix_id_param: remixId,
     })
@@ -75,6 +85,7 @@ export async function voteOnRemix(formData: FormData) {
       return { success: false, error: "unknown", message: "Error updating vote count" }
     }
 
+    console.log('Vote count updated successfully')
     revalidatePath("/")
     return { success: true }
   } catch (error) {
@@ -88,6 +99,8 @@ export async function toggleFavorite(formData: FormData) {
     const remixId = formData.get("remixId") as string
     const supabase = await createClient()
 
+    console.log('toggleFavorite called:', { remixId })
+
     const {
       data: { user },
       error: userError,
@@ -99,6 +112,7 @@ export async function toggleFavorite(formData: FormData) {
     }
 
     const userId = user.id
+    console.log('User authenticated:', { userId })
 
     // Check if already favorited
     const { data: existingFavorite, error: favoriteError } = await supabase
@@ -106,15 +120,18 @@ export async function toggleFavorite(formData: FormData) {
       .select("*")
       .eq("user_id", userId)
       .eq("remix_id", remixId)
-      .single()
+      .maybeSingle()
 
-    if (favoriteError && favoriteError.code !== 'PGRST116') {
+    console.log('Existing favorite check:', { existingFavorite, favoriteError })
+
+    if (favoriteError) {
       console.error("Error checking favorite status:", favoriteError)
       return { success: false, error: "unknown", message: "Error checking favorite status" }
     }
 
     if (existingFavorite) {
       // Remove from favorites
+      console.log('Removing from favorites')
       const { error: deleteError } = await supabase
         .from("user_favorites")
         .delete()
@@ -125,8 +142,10 @@ export async function toggleFavorite(formData: FormData) {
         console.error("Error removing favorite:", deleteError)
         return { success: false, error: "unknown", message: "Error removing favorite" }
       }
+      console.log('Favorite removed successfully')
     } else {
       // Add to favorites
+      console.log('Adding to favorites')
       const { error: insertError } = await supabase
         .from("user_favorites")
         .insert({
@@ -138,6 +157,7 @@ export async function toggleFavorite(formData: FormData) {
         console.error("Error adding favorite:", insertError)
         return { success: false, error: "unknown", message: "Error adding favorite" }
       }
+      console.log('Favorite added successfully')
     }
 
     revalidatePath("/")
