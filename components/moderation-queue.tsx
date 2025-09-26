@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, Eye } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 interface ModerationQueueItem {
   id: string;
@@ -40,17 +42,45 @@ interface ModerationStats {
 }
 
 export function ModerationQueue() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [items, setItems] = useState<ModerationQueueItem[]>([]);
   const [stats, setStats] = useState<ModerationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<ModerationQueueItem | null>(null);
   const [moderatorNotes, setModeratorNotes] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchQueueItems();
-    fetchStats();
-  }, []);
+    if (user) {
+      checkUserRole();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userRole && (userRole === 'admin' || userRole === 'moderator')) {
+      fetchQueueItems();
+      fetchStats();
+    }
+  }, [userRole]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/api/user-role');
+      const data = await response.json();
+      setUserRole(data.role);
+      
+      if (data.role !== 'admin' && data.role !== 'moderator') {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      router.push('/');
+    }
+  };
 
   const fetchQueueItems = async () => {
     try {
@@ -132,10 +162,23 @@ export function ModerationQueue() {
     }
   };
 
-  if (loading) {
+  if (loading || !userRole) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (userRole !== 'admin' && userRole !== 'moderator') {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access the moderation queue.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
