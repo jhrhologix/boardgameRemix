@@ -42,9 +42,9 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Temporarily disable middleware to test redirect loop
-     * Only match specific paths that need auth
+     * Match API routes and pages that need auth
      */
+    '/api/(.*)',
     '/submit',
     '/profile',
     '/favorites',
