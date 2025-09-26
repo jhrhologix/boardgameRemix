@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import VoteButtons from '@/components/vote-buttons'
@@ -89,7 +89,7 @@ function getAmazonLink(gameName: string) {
 
 export default function RemixDetail({ initialData }: RemixDetailProps) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, supabase } = useAuth()
   const [remix, setRemix] = useState<RemixData>(initialData)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
@@ -129,7 +129,7 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
         // Get favorite status
         const { data: favoriteData, error: favoriteError } = await supabase
           .from('user_favorites')
-          .select('id')
+          .select('remix_id')
           .eq('user_id', user.id)
           .eq('remix_id', remix.id)
           .maybeSingle()
