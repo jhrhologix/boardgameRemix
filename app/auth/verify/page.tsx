@@ -23,13 +23,26 @@ function VerifyPageContent() {
         console.log('Fragment params:', Object.fromEntries(fragmentParams.entries()))
         
         // Check for token in query params (from Supabase email links)
-        const token = searchParams.get('token')
-        const type = searchParams.get('type')
+        const token = searchParams.get('token') || urlParams.get('token')
+        const type = searchParams.get('type') || urlParams.get('type')
+        
+        console.log('Token check:', { token: !!token, type, searchParamsToken: searchParams.get('token'), urlParamsToken: urlParams.get('token') })
         
         if (token && type) {
           console.log('Found token in query params, redirecting to callback...')
           // Redirect to callback route which handles token verification
           router.push(`/auth/callback?token=${token}&type=${type}`)
+          return
+        }
+        
+        // If no token found, check if we should redirect to auth page with error
+        console.log('No token found, checking if this is a failed verification...')
+        
+        // Check if we came from a Supabase redirect but lost the token
+        const referrer = document.referrer
+        if (referrer && referrer.includes('supabase.co')) {
+          console.log('Came from Supabase but no token found, redirecting to auth with error')
+          router.push('/auth?error=verification-failed&error_description=Token not found in URL')
           return
         }
         
