@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Heart, LogOut, Settings, UserIcon, Plus } from "lucide-react"
 import Link from "next/link"
@@ -20,6 +20,7 @@ interface UserMenuProps {
 
 export default function UserMenu({ user }: UserMenuProps) {
   const router = useRouter()
+  const supabase = createClient()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
