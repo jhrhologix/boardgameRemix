@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const handleVerification = async () => {
@@ -20,6 +21,17 @@ export default function VerifyPage() {
         
         console.log('URL params:', Object.fromEntries(urlParams.entries()))
         console.log('Fragment params:', Object.fromEntries(fragmentParams.entries()))
+        
+        // Check for token in query params (from Supabase email links)
+        const token = searchParams.get('token')
+        const type = searchParams.get('type')
+        
+        if (token && type) {
+          console.log('Found token in query params, redirecting to callback...')
+          // Redirect to callback route which handles token verification
+          router.push(`/auth/callback?token=${token}&type=${type}`)
+          return
+        }
         
         // Check for error in fragment first
         const error = fragmentParams.get('error') || urlParams.get('error')
@@ -76,7 +88,7 @@ export default function VerifyPage() {
 
     // Add a small delay to ensure the page is fully loaded
     setTimeout(handleVerification, 100)
-  }, [router])
+  }, [router, searchParams])
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
@@ -94,5 +106,20 @@ export default function VerifyPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35] mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <VerifyPageContent />
+    </Suspense>
   )
 }

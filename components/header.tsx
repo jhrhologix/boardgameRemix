@@ -60,7 +60,7 @@ export default function Header() {
             ) : (
               <Link href="/auth">
                 <Button variant="outline" className="bg-black text-[#FF6B35] border-[#004E89]/20 hover:bg-[#004E89]/20 hover:text-[#FF6B35] text-sm sm:text-base">
-                  <span className="hidden sm:inline">Log in</span>
+                  <span className="hidden sm:inline">Login/Signup</span>
                   <span className="sm:hidden">Login</span>
                 </Button>
               </Link>
