@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -41,6 +41,7 @@ export default function CommentsSection({ remixId, isOwner }: CommentsSectionPro
   const [isLoadingComments, setIsLoadingComments] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
+  const supabase = createClient()
   
   const isAuthenticated = !!user
 

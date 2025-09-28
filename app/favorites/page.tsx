@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import GameCard from "@/components/game-card"
@@ -60,6 +60,7 @@ export default function FavoritesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const supabase = createClient()
   const { toast } = useToast()
 
   useEffect(() => {

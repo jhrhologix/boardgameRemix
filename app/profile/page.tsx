@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false)
   const [remixes, setRemixes] = useState<Remix[]>([])
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     async function loadProfile() {

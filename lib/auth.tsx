@@ -69,11 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router])
 
   const signUp = async (email: string, password: string, callbackUrl?: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?callbackUrl=${encodeURIComponent(callbackUrl || '/')}`
+        emailRedirectTo: `${baseUrl}/auth/callback?callbackUrl=${encodeURIComponent(callbackUrl || '/')}`
       }
     })
     return { user: data.user, error }

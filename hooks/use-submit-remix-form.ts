@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase' // Use singleton client
+import { createClient } from '@/lib/supabase/client' // Use singleton client
 import type { BGGGame } from '@/lib/bgg-api'
 import { useContentModeration } from './use-content-moderation'
 import { useAuth } from '@/lib/auth'
@@ -32,6 +32,7 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
   const router = useRouter()
   const { moderateContent, loading: moderationLoading, error: moderationError } = useContentModeration()
   const { user } = useAuth()
+  const supabase = createClient()
   
   const [formState, setFormState] = useState<FormState>({
     data: {
