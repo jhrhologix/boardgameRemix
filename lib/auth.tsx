@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${baseUrl}/auth/callback?callbackUrl=${encodeURIComponent(callbackUrl || '/')}`
+        emailRedirectTo: `${baseUrl}/auth/verify?callbackUrl=${encodeURIComponent(callbackUrl || '/')}`
       }
     })
     

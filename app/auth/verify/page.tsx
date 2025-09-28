@@ -29,10 +29,24 @@ function VerifyPageContent() {
         console.log('Token check:', { token: !!token, type, searchParamsToken: searchParams.get('token'), urlParamsToken: urlParams.get('token') })
         
         if (token && type) {
-          console.log('Found token in query params, redirecting to callback...')
-          // Redirect to callback route which handles token verification
-          router.push(`/auth/callback?token=${token}&type=${type}`)
-          return
+          console.log('Found token in query params, verifying directly...')
+          // Verify the token directly instead of redirecting
+          const supabase = createClient()
+          const { data, error } = await supabase.auth.exchangeCodeForSession(token)
+          
+          console.log('Token verification result:', { data: !!data, error: error?.message })
+          
+          if (!error && data.user) {
+            console.log('Verification successful! Redirecting to home...')
+            // Get the callback URL from the original URL
+            const callbackUrl = searchParams.get('callbackUrl') || '/'
+            router.push(callbackUrl)
+            return
+          } else {
+            console.error('Token verification failed:', error)
+            router.push('/auth?error=verification-failed&error_description=' + encodeURIComponent(error?.message || 'Token verification failed'))
+            return
+          }
         }
         
         // If no token found, check if we should redirect to auth page with error
