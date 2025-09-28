@@ -22,11 +22,11 @@ function VerifyPageContent() {
         console.log('URL params:', Object.fromEntries(urlParams.entries()))
         console.log('Fragment params:', Object.fromEntries(fragmentParams.entries()))
         
-        // Check for token in query params (from Supabase email links)
-        const token = searchParams.get('token') || urlParams.get('token')
+        // Check for token/code in query params (from Supabase email links)
+        const token = searchParams.get('token') || urlParams.get('token') || searchParams.get('code') || urlParams.get('code')
         const type = searchParams.get('type') || urlParams.get('type')
         
-        console.log('Token check:', { token: !!token, type, searchParamsToken: searchParams.get('token'), urlParamsToken: urlParams.get('token') })
+        console.log('Token check:', { token: !!token, type, searchParamsToken: searchParams.get('token'), urlParamsToken: urlParams.get('token'), searchParamsCode: searchParams.get('code'), urlParamsCode: urlParams.get('code') })
         
         if (token && type) {
           console.log('Found token in query params, verifying directly...')
@@ -45,6 +45,21 @@ function VerifyPageContent() {
           } else {
             console.error('Token verification failed:', error)
             router.push('/auth?error=verification-failed&error_description=' + encodeURIComponent(error?.message || 'Token verification failed'))
+            return
+          }
+        }
+        
+        // If no explicit token but we have a code, check if user is already authenticated
+        const code = searchParams.get('code') || urlParams.get('code')
+        if (code && !token) {
+          console.log('Found code parameter, checking if user is already authenticated...')
+          const supabase = createClient()
+          const { data: { user }, error } = await supabase.auth.getUser()
+          
+          if (!error && user) {
+            console.log('User is already authenticated, redirecting to home...')
+            const callbackUrl = searchParams.get('callbackUrl') || '/'
+            router.push(callbackUrl)
             return
           }
         }
