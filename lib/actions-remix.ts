@@ -4,6 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+// Normalize hashtag names to prevent duplicates
+// Converts to lowercase, replaces spaces with hyphens, removes multiple hyphens
+function normalizeHashtag(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')  // Replace spaces with hyphens
+    .replace(/-+/g, '-')   // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+}
+
 export interface CreateRemixData {
   title: string
   description: string
@@ -116,7 +127,7 @@ export async function createRemix(
     if (hashtags.length > 0) {
       // First, ensure all hashtags exist
       const hashtagInserts = hashtags.map(hashtag => ({
-        name: hashtag.name.toLowerCase()
+        name: normalizeHashtag(hashtag.name)
       }))
 
       const { error: hashtagsError } = await supabase
@@ -134,7 +145,7 @@ export async function createRemix(
         const { data: hashtagData, error: hashtagError } = await supabase
           .from('hashtags')
           .select('id')
-          .eq('name', hashtag.name.toLowerCase())
+          .eq('name', normalizeHashtag(hashtag.name))
           .single()
 
         if (hashtagError || !hashtagData) {
@@ -291,7 +302,7 @@ export async function updateRemix(
     if (hashtags.length > 0) {
       // First, ensure all hashtags exist
       const hashtagInserts = hashtags.map(hashtag => ({
-        name: hashtag.name.toLowerCase()
+        name: normalizeHashtag(hashtag.name)
       }))
 
       const { error: hashtagsError } = await supabase
@@ -309,7 +320,7 @@ export async function updateRemix(
         const { data: hashtagData, error: hashtagError } = await supabase
           .from('hashtags')
           .select('id')
-          .eq('name', hashtag.name.toLowerCase())
+          .eq('name', normalizeHashtag(hashtag.name))
           .single()
 
         if (hashtagError || !hashtagData) {
