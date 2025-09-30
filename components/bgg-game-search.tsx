@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Search, X, ExternalLink, Plus } from "lucide-react"
+import { Search, X, ExternalLink, Plus, Filter } from "lucide-react"
 import type { BGGGame } from "@/lib/bgg-api"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface BGGGameSearchProps {
   onSelectGame: (game: BGGGame) => void
@@ -19,6 +21,10 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
   const [searchResults, setSearchResults] = useState<BGGGame[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [yearFilter, setYearFilter] = useState("")
+  const [exactMatch, setExactMatch] = useState(false)
+  const [sortBy, setSortBy] = useState<'relevance' | 'year' | 'name'>('relevance')
 
   // Debug logging for state changes
   useEffect(() => {
@@ -45,7 +51,12 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
       
       try {
         console.log('Sending search request for:', query)
-        const response = await fetch(`/api/bgg/search?q=${encodeURIComponent(query)}`)
+        const params = new URLSearchParams({
+          q: query,
+          ...(exactMatch && { exact: '1' }),
+          ...(yearFilter && { year: yearFilter })
+        })
+        const response = await fetch(`/api/bgg/search?${params.toString()}`)
         const data = await response.json()
         console.log('Raw API response:', data)
 
@@ -63,7 +74,20 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
         }
 
         console.log('Setting search results:', data.results)
-        setSearchResults(data.results)
+        let results = data.results
+        
+        // Apply client-side sorting
+        if (sortBy === 'year') {
+          results = [...results].sort((a, b) => {
+            const yearA = parseInt(a.yearPublished || '0')
+            const yearB = parseInt(b.yearPublished || '0')
+            return yearB - yearA // Newest first
+          })
+        } else if (sortBy === 'name') {
+          results = [...results].sort((a, b) => a.name.localeCompare(b.name))
+        }
+        
+        setSearchResults(results)
         setIsOpen(true)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to search games'
@@ -77,7 +101,7 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
 
     const debounceTimer = setTimeout(searchGames, 300)
     return () => clearTimeout(debounceTimer)
-  }, [query])
+  }, [query, yearFilter, exactMatch, sortBy])
 
   const handleSelectGame = (game: BGGGame) => {
     console.log('Selecting game:', game)
@@ -134,7 +158,73 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
             >
               <Search className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              className={`${showFilters ? 'bg-[#004E89] text-white' : 'bg-white text-gray-900'} border-gray-200`}
+              onClick={() => setShowFilters(!showFilters)}
+              type="button"
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
           </div>
+
+          {/* Filter Options */}
+          {showFilters && (
+            <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="year-filter" className="text-sm font-medium text-gray-700">Year</Label>
+                  <Input
+                    id="year-filter"
+                    type="text"
+                    placeholder="e.g., 2001"
+                    value={yearFilter}
+                    onChange={(e) => setYearFilter(e.target.value)}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Filter by publication year</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Sort By</Label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'relevance' | 'year' | 'name')}
+                    className="w-full mt-1 px-3 py-2 border rounded-md text-gray-900 bg-white"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="year">Year (Newest First)</option>
+                    <option value="name">Name (A-Z)</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Match Type</Label>
+                  <label className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      checked={exactMatch}
+                      onChange={(e) => setExactMatch(e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Exact match only</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setYearFilter('')
+                    setExactMatch(false)
+                    setSortBy('relevance')
+                  }}
+                  type="button"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          )}
 
           {isOpen && (
             <div className="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-200">

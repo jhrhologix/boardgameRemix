@@ -4,14 +4,16 @@ import { searchBGGGamesServer } from "@/lib/bgg-api"
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get("q")
+  const exactMatch = searchParams.get("exact") === "1"
+  const yearFilter = searchParams.get("year")
 
   if (!query) {
     return NextResponse.json({ error: "Query parameter 'q' is required" }, { status: 400 })
   }
 
   try {
-    console.log('API route: searching for', query)
-    const results = await searchBGGGamesServer(query)
+    console.log('API route: searching for', { query, exactMatch, yearFilter })
+    const results = await searchBGGGamesServer(query, { exactMatch, yearFilter: yearFilter || undefined })
     console.log('API route: got results', results)
     
     if (!Array.isArray(results)) {

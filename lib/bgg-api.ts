@@ -187,13 +187,25 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
 }
 
 // Server-side version of the search function
-export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
+export async function searchBGGGamesServer(
+  query: string,
+  options?: { exactMatch?: boolean; yearFilter?: string }
+): Promise<BGGGame[]> {
   try {
-    console.log('Searching BGG for:', query)
+    const { exactMatch = false, yearFilter } = options || {}
+    console.log('Searching BGG for:', { query, exactMatch, yearFilter })
     // Make search case-insensitive and use contains matching
     const searchQuery = query.toLowerCase().trim()
+    
+    // Build the API URL with parameters
+    const params = new URLSearchParams({
+      query: searchQuery,
+      type: 'boardgame',
+      exact: exactMatch ? '1' : '0'
+    })
+    
     const response = await fetch(
-      `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(searchQuery)}&type=boardgame&exact=0`,
+      `https://boardgamegeek.com/xmlapi2/search?${params.toString()}`,
       {
         headers: {
           'Accept': 'application/xml',
@@ -240,7 +252,7 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
 
     const results: BGGGame[] = []
 
-    for (let i = 0; i < items.length && i < 50; i++) {
+    for (let i = 0; i < items.length && i < 100; i++) {
       try {
         const item = items[i]
         const id = item.getAttribute("id")
@@ -263,6 +275,11 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
 
         const yearNodes = item.getElementsByTagName("yearpublished")
         const yearPublished = yearNodes.length > 0 ? yearNodes[0].getAttribute("value") || undefined : undefined
+        
+        // Apply year filter if specified
+        if (yearFilter && yearPublished !== yearFilter) {
+          continue // Skip games that don't match the year
+        }
 
         // Calculate relevance score for better sorting (prioritize contains matches)
         const nameLower = name.toLowerCase()
@@ -309,8 +326,9 @@ export async function searchBGGGamesServer(query: string): Promise<BGGGame[]> {
     // Sort by relevance score (exact matches first)
     results.sort((a, b) => (b as any).relevanceScore - (a as any).relevanceScore)
 
-    console.log('Processed BGG results:', results)
-    return results
+    console.log('Processed BGG results:', results.length, 'games')
+    // Limit to 50 results for performance
+    return results.slice(0, 50)
   } catch (error) {
     console.error("Error searching BGG:", error)
     throw error
