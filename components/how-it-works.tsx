@@ -5,22 +5,22 @@ export default function HowItWorks() {
     {
       icon: <Search className="h-12 w-12 text-[#FF6B35]" />,
       title: "Find Board Game Remixes",
-      description: "Search for <strong>creative board game combinations</strong> based on the tabletop games you already own. Discover <strong>game variants</strong> and <strong>custom rules</strong> that breathe new life into your collection.",
+      description: "Search for creative board game combinations based on the tabletop games you already own. Discover game variants and custom rules that breathe new life into your collection.",
     },
     {
       icon: <BookOpen className="h-12 w-12 text-[#FF6B35]" />,
       title: "Learn New Game Rules",
-      description: "Discover <strong>innovative game modifications</strong> and <strong>setup instructions</strong> that transform familiar board games into fresh, exciting experiences. Master <strong>creative gaming</strong> techniques.",
+      description: "Discover innovative game modifications and setup instructions that transform familiar board games into fresh, exciting experiences. Master creative gaming techniques."
     },
     {
       icon: <Upload className="h-12 w-12 text-[#FF6B35]" />,
       title: "Share Your Game Ideas",
-      description: "Created a unique <strong>board game remix</strong>? Share your <strong>game invention</strong> and <strong>creative variants</strong> with our community of <strong>gaming innovators</strong>.",
+      description: "Created a unique board game remix? Share your game invention and creative variants with our community of gaming innovators."
     },
     {
       icon: <Users className="h-12 w-12 text-[#FF6B35]" />,
       title: "Play with Friends",
-      description: "Invite friends and family to enjoy your new <strong>tabletop game discoveries</strong>. Build lasting memories with <strong>creative board game combinations</strong>.",
+      description: "Invite friends and family to enjoy your new tabletop game discoveries. Build lasting memories with creative board game combinations."
     },
   ]
 

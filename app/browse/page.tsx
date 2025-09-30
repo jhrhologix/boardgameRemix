@@ -185,14 +185,16 @@ export default async function BrowsePage({
       allGames = uniqueGames
     }
 
-    // Fetch all hashtags for the filter
+    // Fetch all hashtags for the filter (ensuring uniqueness)
     const { data: tagsData } = await supabase
       .from('hashtags')
       .select('name')
       .order('name')
 
     if (tagsData) {
-      allTags = tagsData.map(t => t.name)
+      // Remove duplicates using Set
+      const uniqueTags = Array.from(new Set(tagsData.map(t => t.name)))
+      allTags = uniqueTags
     }
 
     let query = supabase
