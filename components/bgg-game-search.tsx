@@ -161,7 +161,12 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
             <Button
               variant="outline"
               className={`${showFilters ? 'bg-[#004E89] text-white' : 'bg-white text-gray-900'} border-gray-200`}
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => {
+                setShowFilters(!showFilters)
+                if (!showFilters) {
+                  setIsOpen(false) // Close results dropdown when opening filters
+                }
+              }}
               type="button"
             >
               <Filter className="h-4 w-4" />
@@ -170,7 +175,7 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
 
           {/* Filter Options */}
           {showFilters && (
-            <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 space-y-3">
+            <div className="relative z-40 mt-2 p-3 bg-white rounded-md border border-gray-200 shadow-sm space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <Label htmlFor="year-filter" className="text-sm font-medium text-gray-700">Year</Label>
@@ -180,7 +185,7 @@ export default function BGGGameSearch({ onSelectGame, selectedGames, onRemoveGam
                     placeholder="e.g., 2001"
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
-                    className="mt-1"
+                    className="mt-1 bg-white text-gray-900"
                   />
                   <p className="text-xs text-gray-500 mt-1">Filter by publication year</p>
                 </div>
