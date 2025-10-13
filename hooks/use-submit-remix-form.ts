@@ -267,10 +267,10 @@ export function useSubmitRemixForm(userId: string, remixId?: string) {
       
       if (remixId) {
         // Update existing remix
-        result = await updateRemix(remixId, remixData, games, hashtags, tags, userId)
+        result = await updateRemix(remixId, remixData, games, hashtags, tags, userId, formState.captchaToken || undefined)
       } else {
         // Create new remix
-        result = await createRemix(remixData, games, hashtags, tags, userId)
+        result = await createRemix(remixData, games, hashtags, tags, userId, formState.captchaToken || undefined)
       }
 
       if (!result.success || !result.remix) {

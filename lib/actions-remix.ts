@@ -46,9 +46,20 @@ export async function createRemix(
   games: RemixGameData[],
   hashtags: RemixHashtagData[],
   tags: RemixTagData[],
-  userId: string
+  userId: string,
+  recaptchaToken?: string
 ) {
   const supabase = await createClient()
+  
+  // Verify reCAPTCHA if token is provided (and secret key is configured)
+  if (recaptchaToken && process.env.RECAPTCHA_SECRET_KEY) {
+    const { verifyRecaptcha } = await import('@/lib/recaptcha')
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken)
+    
+    if (!recaptchaResult.success) {
+      throw new Error(recaptchaResult.error || 'reCAPTCHA verification failed')
+    }
+  }
   
   // Verify user is authenticated
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -215,9 +226,20 @@ export async function updateRemix(
   games: RemixGameData[],
   hashtags: RemixHashtagData[],
   tags: RemixTagData[],
-  userId: string
+  userId: string,
+  recaptchaToken?: string
 ) {
   const supabase = await createClient()
+  
+  // Verify reCAPTCHA if token is provided (and secret key is configured)
+  if (recaptchaToken && process.env.RECAPTCHA_SECRET_KEY) {
+    const { verifyRecaptcha } = await import('@/lib/recaptcha')
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken)
+    
+    if (!recaptchaResult.success) {
+      throw new Error(recaptchaResult.error || 'reCAPTCHA verification failed')
+    }
+  }
   
   // Verify user is authenticated
   const { data: { user }, error: authError } = await supabase.auth.getUser()
