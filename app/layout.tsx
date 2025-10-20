@@ -3,6 +3,7 @@ import './globals.css'
 import { AuthProvider } from '@/lib/auth'
 import { NavBar } from '@/components/nav-bar'
 import { GoogleAnalytics } from '@/components/google-analytics'
+import MarkerFeedback from '@/components/marker-feedback'
 
 export const metadata: Metadata = {
   title: {
@@ -113,6 +114,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <GoogleAnalytics />
+        <MarkerFeedback />
         <AuthProvider>
           <NavBar />
           <main>
