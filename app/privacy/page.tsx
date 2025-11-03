@@ -10,7 +10,8 @@ export default function PrivacyPolicy() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
       
-      <section className="mb-8">
+      {/* Affiliate Disclosure - Temporarily Removed */}
+      {/* <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Affiliate Disclosure</h2>
         <p className="mb-4">
           Board Game Remix is a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.com.
@@ -21,7 +22,7 @@ export default function PrivacyPolicy() {
         <p className="mb-4">
           We only recommend products that we believe will be valuable to our users, and our affiliate relationships do not influence our product recommendations or reviews. All opinions expressed on this site are our own.
         </p>
-      </section>
+      </section> */}
 
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Information We Collect</h2>

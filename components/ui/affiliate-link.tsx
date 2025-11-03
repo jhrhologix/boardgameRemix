@@ -19,7 +19,9 @@ export function AffiliateLink({ productId, children, className }: AffiliateLinkP
   const affiliateId = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_ID
 
   const buildAffiliateUrl = (productId: string) => {
-    return `https://www.amazon.com/dp/${productId}?tag=${affiliateId}`
+    // Amazon affiliate temporarily disabled - using non-affiliate link
+    // return `https://www.amazon.com/dp/${productId}?tag=${affiliateId}`
+    return `https://www.amazon.com/dp/${productId}`
   }
 
   return (
@@ -39,7 +41,7 @@ export function AffiliateLink({ productId, children, className }: AffiliateLinkP
           </TooltipTrigger>
           <TooltipContent>
             <p className="text-sm">
-              As an Amazon Associate, we earn from qualifying purchases.
+              Amazon affiliate links temporarily disabled.
             </p>
           </TooltipContent>
         </Tooltip>

@@ -10,11 +10,12 @@ export default function AmazonAffiliateLink({ gameName, className }: AmazonAffil
   // Create a search-friendly version of the game name for Amazon
   const searchQuery = encodeURIComponent(`${gameName} board game`)
 
-  // Replace this with your actual Amazon affiliate tag
-  const affiliateTag = "remixgames-20"
-
-  // Construct the Amazon affiliate URL
-  const amazonUrl = `https://www.amazon.com/s?k=${searchQuery}&tag=${affiliateTag}`
+  // Amazon affiliate temporarily disabled
+  // const affiliateTag = "remixgames-20"
+  // const amazonUrl = `https://www.amazon.com/s?k=${searchQuery}&tag=${affiliateTag}`
+  
+  // Use non-affiliate link temporarily
+  const amazonUrl = `https://www.amazon.com/s?k=${searchQuery}`
 
   return (
     <Button

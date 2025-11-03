@@ -80,12 +80,12 @@ interface RemixDetailProps {
   initialData: RemixData
 }
 
-// Function to get Amazon affiliate link
-function getAmazonLink(gameName: string) {
-  const searchQuery = encodeURIComponent(gameName + " board game")
-  // Replace YOUR_AFFILIATE_ID with your actual Amazon affiliate ID
-  return `https://www.amazon.com/s?k=${searchQuery}&tag=YOUR_AFFILIATE_ID`
-}
+// Function to get Amazon affiliate link - TEMPORARILY DISABLED
+// function getAmazonLink(gameName: string) {
+//   const searchQuery = encodeURIComponent(gameName + " board game")
+//   // Replace YOUR_AFFILIATE_ID with your actual Amazon affiliate ID
+//   return `https://www.amazon.com/s?k=${searchQuery}&tag=YOUR_AFFILIATE_ID`
+// }
 
 export default function RemixDetail({ initialData }: RemixDetailProps) {
   const router = useRouter()
@@ -337,14 +337,15 @@ export default function RemixDetail({ initialData }: RemixDetailProps) {
                   <p className="text-sm text-[#FF6B35] mt-1">View on BoardGameGeek →</p>
                 </div>
               </a>
-              <a
+              {/* Amazon affiliate link temporarily disabled */}
+              {/* <a
                 href={getAmazonLink(gameRel.game.name)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#FF6B35] hover:bg-[#e55a2a] text-white text-center py-2 px-4 rounded-lg transition-colors"
               >
                 Buy on Amazon
-              </a>
+              </a> */}
             </div>
           ))}
         </div>
