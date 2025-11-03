@@ -34,11 +34,13 @@ export async function GET(request: NextRequest) {
 
     // Fetch the image using proper BGG API access
     // Following BGG XML API Terms of Use for non-commercial use
+    // Note: Images from cf.geekdo-images.com don't need rate limiting like the API
     const imageResponse = await fetch(gameDetails.image, {
       headers: {
-        'User-Agent': 'BoardGameRemix/1.0 (Non-Commercial Educational Use - BGG API Compliant)',
+        'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
         'Referer': 'https://boardgamegeek.com/',
         'Accept': 'image/*',
+        'From': 'support@remix.games'
       },
       // Add timeout to prevent hanging requests
       signal: AbortSignal.timeout(10000), // 10 second timeout

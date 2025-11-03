@@ -1,6 +1,32 @@
 // BoardGameGeek API client
 import type { DOMParser as XMLDOMParser } from '@xmldom/xmldom'
 
+// Global rate limiting for BGG API - maximum 1 request per 2 seconds
+let globalLastRequest = 0
+const GLOBAL_MIN_INTERVAL = 2000 // 2 seconds minimum between ANY requests
+
+async function rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
+  const now = Date.now()
+  const timeSinceLastRequest = now - globalLastRequest
+  const waitTime = GLOBAL_MIN_INTERVAL - timeSinceLastRequest
+  
+  if (waitTime > 0) {
+    console.log(`Rate limiting: waiting ${waitTime}ms before BGG API request`)
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+  }
+  
+  globalLastRequest = Date.now()
+  
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
+      'From': 'support@remix.games'
+    }
+  })
+}
+
 export type GameType = 'strategy' | 'luck' | 'skill' | 'combat' | 'social' | 'time' | 'coop'
 
 export interface BGGGame {
@@ -118,12 +144,11 @@ export async function searchBGGGames(query: string): Promise<BGGGame[]> {
 // Get detailed game info from BoardGameGeek
 export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null> {
   try {
-    const response = await fetch(
+    const response = await rateLimitedFetch(
       `https://boardgamegeek.com/xmlapi2/thing?id=${gameId}&stats=1`,
       {
         headers: {
-          'Accept': 'application/xml',
-          'User-Agent': 'BoardGameRemix/1.0'
+          'Accept': 'application/xml'
         }
       }
     )
@@ -204,12 +229,11 @@ export async function searchBGGGamesServer(
       exact: exactMatch ? '1' : '0'
     })
     
-    const response = await fetch(
+    const response = await rateLimitedFetch(
       `https://boardgamegeek.com/xmlapi2/search?${params.toString()}`,
       {
         headers: {
           'Accept': 'application/xml',
-          'User-Agent': 'BoardGameRemix/1.0',
           'Origin': 'https://boardgamegeek.com',
           'Referer': 'https://boardgamegeek.com/'
         },
