@@ -85,7 +85,7 @@ export default function Footer() {
           <div className="mt-4 flex flex-col items-center space-y-2">
             {/* Official "Powered by BGG" Logo - Required by BGG XML API Terms of Use */}
             {/* Logo files: https://drive.google.com/drive/folders/1k3VgEIpNEY59iTVnpTibt31JcO0rEaSw?usp=drive_link */}
-            <BGGPoweredLogo width={200} height={60} className="mb-2" />
+            <BGGPoweredLogo width={200} height={150} className="mb-2" />
             <p className="text-xs">
               Game data and images provided by BoardGameGeek under their{' '}
               <a 
