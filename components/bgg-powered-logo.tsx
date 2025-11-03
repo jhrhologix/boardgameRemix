@@ -55,7 +55,7 @@ export default function BGGPoweredLogo({
       aria-label="Powered by BoardGameGeek"
     >
       <Image
-        src="/bgg-powered-logo.svg"
+        src="/images/pic7779581.webp"
         alt="Powered by BoardGameGeek"
         width={width}
         height={height}
