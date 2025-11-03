@@ -25,11 +25,57 @@ export async function GET(request: NextRequest) {
   lastRequestTime.set(gameId, Date.now())
 
   try {
-    // Use BGG's official API to get game details including image URL
+    // First check if we have the image cached in our database
+    const supabase = await import('@/lib/supabase/server').then(m => m.createClient())
+    const { data: cachedGame } = await supabase
+      .from('bgg_games')
+      .select('image_url, thumbnail_url')
+      .eq('bgg_id', gameId)
+      .single()
+    
+    // If we have a cached image (already migrated), use it
+    if (cachedGame?.image_url && !cachedGame.image_url.includes('cf.geekdo-images.com')) {
+      // Redirect to cached image if it's stored locally
+      return NextResponse.redirect(cachedGame.image_url)
+    }
+    
+    // Try to get image URL from cached database entry first
+    if (cachedGame?.image_url) {
+      try {
+        const imageResponse = await fetch(cachedGame.image_url, {
+          headers: {
+            'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
+            'Referer': 'https://boardgamegeek.com/',
+            'Accept': 'image/*',
+          },
+          signal: AbortSignal.timeout(5000),
+        })
+        
+        if (imageResponse.ok) {
+          const imageBuffer = await imageResponse.arrayBuffer()
+          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+          return new NextResponse(imageBuffer, {
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=604800',
+              'X-BGG-Game-ID': gameId,
+              'X-Image-Source': 'Cached',
+            },
+          })
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch cached image for ${gameId}, trying API...`)
+      }
+    }
+    
+    // Fallback: Use BGG's official API to get game details including image URL
+    console.log(`Fetching game details from BGG API for gameId: ${gameId}`)
     const gameDetails = await getBGGGameDetails(gameId)
     
     if (!gameDetails || !gameDetails.image) {
-      return new NextResponse('Game not found or no image available', { status: 404 })
+      console.error(`No game details or image for gameId: ${gameId}`)
+      // Return placeholder image instead of 404
+      return NextResponse.redirect('/placeholder.svg')
     }
 
     // Fetch the image using proper BGG API access
@@ -48,7 +94,8 @@ export async function GET(request: NextRequest) {
 
     if (!imageResponse.ok) {
       console.error(`Failed to fetch image for game ${gameId}: ${imageResponse.status}`)
-      return new NextResponse('Image not available', { status: 404 })
+      // Return placeholder instead of 404 to prevent broken images
+      return NextResponse.redirect('/placeholder.svg')
     }
 
     const imageBuffer = await imageResponse.arrayBuffer()
@@ -65,7 +112,8 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('BGG image fetch error:', error)
-    return new NextResponse('Internal server error', { status: 500 })
+    console.error(`BGG image fetch error for gameId ${gameId}:`, error)
+    // Return placeholder instead of error to prevent broken images
+    return NextResponse.redirect('/placeholder.svg')
   }
 }

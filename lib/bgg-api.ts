@@ -154,10 +154,19 @@ export async function getBGGGameDetails(gameId: string): Promise<BGGGame | null>
     )
 
     if (!response.ok) {
-      throw new Error(`Failed to get game details: ${response.statusText}`)
+      console.error(`BGG API error for gameId ${gameId}: ${response.status} - ${response.statusText}`)
+      if (response.status === 403 || response.status === 429) {
+        console.error('BGG API blocked or rate limited - consider migrating images to local storage')
+      }
+      throw new Error(`Failed to get game details: ${response.status} ${response.statusText}`)
     }
 
     const text = await response.text()
+    
+    if (!text || text.trim() === '') {
+      console.error(`Empty response from BGG API for gameId: ${gameId}`)
+      throw new Error('Empty response from BGG API')
+    }
     const { DOMParser } = await import('@xmldom/xmldom')
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(text, "text/xml")
