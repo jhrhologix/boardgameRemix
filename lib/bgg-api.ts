@@ -17,13 +17,24 @@ async function rateLimitedFetch(url: string, options: RequestInit): Promise<Resp
   
   globalLastRequest = Date.now()
   
+  // Get BGG API token from environment variables (if available)
+  const bggToken = process.env.BGG_API_TOKEN
+  
+  // Build headers with Authorization if token exists
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {}),
+    'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
+    'From': 'support@remix.games'
+  }
+  
+  // Add Authorization header if token is available
+  if (bggToken) {
+    headers['Authorization'] = `Bearer ${bggToken}`
+  }
+  
   return fetch(url, {
     ...options,
-    headers: {
-      ...options.headers,
-      'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
-      'From': 'support@remix.games'
-    }
+    headers
   })
 }
 
