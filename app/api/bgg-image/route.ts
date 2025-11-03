@@ -42,12 +42,20 @@ export async function GET(request: NextRequest) {
     // Try to get image URL from cached database entry first
     if (cachedGame?.image_url) {
       try {
+        // Get BGG API token for Authorization header (if available)
+        const bggToken = process.env.BGG_API_TOKEN
+        const headers: Record<string, string> = {
+          'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
+          'Referer': 'https://boardgamegeek.com/',
+          'Accept': 'image/*',
+          'From': 'support@remix.games'
+        }
+        if (bggToken) {
+          headers['Authorization'] = `Bearer ${bggToken}`
+        }
+        
         const imageResponse = await fetch(cachedGame.image_url, {
-          headers: {
-            'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
-            'Referer': 'https://boardgamegeek.com/',
-            'Accept': 'image/*',
-          },
+          headers,
           signal: AbortSignal.timeout(5000),
         })
         
@@ -81,13 +89,20 @@ export async function GET(request: NextRequest) {
     // Fetch the image using proper BGG API access
     // Following BGG XML API Terms of Use for non-commercial use
     // Note: Images from cf.geekdo-images.com don't need rate limiting like the API
+    // Get BGG API token for Authorization header (if available)
+    const bggToken = process.env.BGG_API_TOKEN
+    const headers: Record<string, string> = {
+      'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
+      'Referer': 'https://boardgamegeek.com/',
+      'Accept': 'image/*',
+      'From': 'support@remix.games'
+    }
+    if (bggToken) {
+      headers['Authorization'] = `Bearer ${bggToken}`
+    }
+    
     const imageResponse = await fetch(gameDetails.image, {
-      headers: {
-        'User-Agent': 'BoardGameRemix/1.0 (+https://remix.games/about; support@remix.games)',
-        'Referer': 'https://boardgamegeek.com/',
-        'Accept': 'image/*',
-        'From': 'support@remix.games'
-      },
+      headers,
       // Add timeout to prevent hanging requests
       signal: AbortSignal.timeout(10000), // 10 second timeout
     })
