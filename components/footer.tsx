@@ -1,5 +1,6 @@
 import Link from "next/link"
 import NewsletterForm from "./newsletter-form"
+import BGGPoweredLogo from "./bgg-powered-logo"
 
 export default function Footer() {
   return (
@@ -80,19 +81,11 @@ export default function Footer() {
         <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
           <p>© {new Date().getFullYear()} Remix Games. All rights reserved.</p>
           
-          {/* BGG Terms of Use Compliance */}
+          {/* BGG Terms of Use Compliance - Official Logo Required */}
           <div className="mt-4 flex flex-col items-center space-y-2">
-            <a 
-              href="https://boardgamegeek.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-block"
-            >
-              {/* Powered by BGG Logo - Required by BGG Terms of Use */}
-              <div className="bg-white rounded px-3 py-2 text-black text-sm font-semibold hover:bg-gray-100 transition-colors">
-                🎲 Powered by BoardGameGeek
-              </div>
-            </a>
+            {/* Official "Powered by BGG" Logo - Required by BGG XML API Terms of Use */}
+            {/* Logo files: https://drive.google.com/drive/folders/1k3VgEIpNEY59iTVnpTibt31JcO0rEaSw?usp=drive_link */}
+            <BGGPoweredLogo width={200} height={60} className="mb-2" />
             <p className="text-xs">
               Game data and images provided by BoardGameGeek under their{' '}
               <a 
