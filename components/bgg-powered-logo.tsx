@@ -25,7 +25,7 @@ interface BGGPoweredLogoProps {
 export default function BGGPoweredLogo({ 
   className = "", 
   width = 200,
-  height = 60 
+  height = 150 
 }: BGGPoweredLogoProps) {
   const [imageError, setImageError] = useState(false)
 
