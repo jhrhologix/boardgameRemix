@@ -20,6 +20,13 @@ async function rateLimitedFetch(url: string, options: RequestInit): Promise<Resp
   // Get BGG API token from environment variables (if available)
   const bggToken = process.env.BGG_API_TOKEN
   
+  // Debug logging (only log presence, not the actual token)
+  if (!bggToken) {
+    console.warn('BGG_API_TOKEN not found in environment variables')
+  } else {
+    console.log('BGG_API_TOKEN found, adding Authorization header')
+  }
+  
   // Build headers with Authorization if token exists
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
